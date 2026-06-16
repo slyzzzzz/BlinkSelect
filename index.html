@@ -53,6 +53,11 @@ nav a:hover{color:var(--charcoal)}
 .creneau:hover{border-color:var(--charcoal)}.creneau.selected{background:var(--charcoal);color:var(--ivory);border-color:var(--charcoal)}
 .creneau.complet{background:var(--ivory);color:#bbb;cursor:not-allowed;font-size:0.72rem}
 .submit-area{margin-top:2rem;display:flex;align-items:center;gap:2rem;flex-wrap:wrap}
+.check-group{display:flex;flex-direction:column;gap:0.75rem;margin-top:1.5rem;margin-bottom:1rem}
+.check-row{display:flex;align-items:flex-start;gap:0.75rem;font-size:0.8rem;color:var(--muted);line-height:1.5;cursor:pointer}
+.check-row input[type=checkbox]{width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--charcoal);cursor:pointer}
+.check-row a{color:var(--charcoal);text-decoration:underline;cursor:pointer}
+.check-row.required-check{color:var(--charcoal)}
 .rgpd{font-size:0.73rem;color:var(--muted);line-height:1.6;max-width:400px}
 .msg{padding:1rem 1.4rem;margin-top:1.2rem;font-size:0.82rem;display:none}
 .msg.success{background:#eaf4ee;color:var(--success);border:0.5px solid #b8ddc9}
@@ -82,7 +87,7 @@ nav a:hover{color:var(--charcoal)}
 .resa-meta-item{font-size:0.8rem;color:var(--muted)}.resa-meta-item strong{color:var(--charcoal);display:block;font-size:0.85rem;margin-top:0.1rem}
 .empty-state{text-align:center;padding:4rem 2rem;color:var(--muted);font-size:0.88rem}
 .admin-layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 65px)}
-.admin-sidebar{background:#fff;border-right:0.5px solid var(--border);padding:2rem 0}
+.admin-sidebar{background:#fff;border-right:0.5px solid var(--border);padding:2rem 0;display:flex;flex-direction:column}
 .admin-sidebar h4{font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);padding:0 1.5rem;margin-bottom:0.8rem}
 .sidebar-item{display:block;padding:0.7rem 1.5rem;font-size:0.83rem;cursor:pointer;color:var(--muted);transition:all 0.15s;border-left:2px solid transparent}
 .sidebar-item:hover{color:var(--charcoal);background:var(--ivory)}
@@ -104,7 +109,6 @@ nav a:hover{color:var(--charcoal)}
 .tbl-btn.danger:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
 .edit-card{background:#fff;border:0.5px solid var(--border);padding:1.5rem 1.8rem;margin-bottom:1.2rem}
 .edit-card h4{font-size:0.9rem;font-weight:500;margin-bottom:1.2rem;display:flex;justify-content:space-between;align-items:center}
-.edit-card .form-grid{gap:1rem}
 .edit-card .btn-primary{margin-top:1rem;font-size:0.7rem;padding:0.65rem 1.4rem}
 .add-btn{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;background:none;border:0.5px solid var(--border);padding:0.6rem 1.2rem;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:1.5rem;transition:all 0.15s}
 .add-btn:hover{background:var(--charcoal);color:var(--ivory);border-color:var(--charcoal)}
@@ -114,22 +118,23 @@ nav a:hover{color:var(--charcoal)}
 .event-card-info h3{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:400;margin-bottom:0.5rem}
 .event-meta{display:flex;gap:1.5rem;flex-wrap:wrap}
 .event-meta-item{font-size:0.78rem;color:var(--muted)}.event-meta-item strong{color:var(--charcoal);display:block;font-size:0.84rem}
-/* tracker */
 .tracker-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:2rem}
+.account-menu-wrap{position:relative}
+.account-dropdown{display:none;position:absolute;right:0;top:calc(100% + 8px);background:#fff;border:0.5px solid var(--border);min-width:180px;z-index:300;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
+.account-dropdown.open{display:block}
+.account-item{padding:0.75rem 1.2rem;font-size:0.78rem;cursor:pointer;color:var(--charcoal);transition:background 0.15s;letter-spacing:0.02em}
+.account-item:hover{background:var(--ivory)}
+.account-item.danger{color:var(--danger);border-top:0.5px solid var(--border)}
+.account-item.danger:hover{background:#fdf0ee}
 .tracker-card{background:#fff;border:0.5px solid var(--border);padding:1.2rem 1.5rem}
 .tracker-card .s-label{font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem}
 .tracker-card .s-num{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:400}
-.chart-bar-wrap{margin-top:1.5rem}
 .chart-bar-wrap h4{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
 .bar-row{display:flex;align-items:center;gap:0.8rem;margin-bottom:0.6rem;font-size:0.78rem}
 .bar-label{width:80px;color:var(--muted);text-align:right;flex-shrink:0}
 .bar-track{flex:1;background:var(--border);height:6px}
-.bar-fill{background:var(--charcoal);height:6px;transition:width 0.6s}
+.bar-fill{background:var(--charcoal);height:6px}
 .bar-val{width:30px;color:var(--charcoal);font-weight:500}
-/* loading */
-.fb-loading{display:flex;align-items:center;justify-content:center;padding:3rem;color:var(--muted);font-size:0.85rem;gap:0.8rem}
-.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--charcoal);border-radius:50%;animation:spin 0.7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
 footer{border-top:0.5px solid var(--border);padding:1.8rem 3rem;display:flex;justify-content:space-between;align-items:center;margin-top:4rem}
 footer .logo{font-size:1rem}
 footer p{font-size:0.73rem;color:var(--muted)}
@@ -180,16 +185,16 @@ footer p{font-size:0.73rem;color:var(--muted)}
       <button class="btn-primary" onclick="currentUser?document.getElementById('section-rdv').scrollIntoView({behavior:'smooth'}):document.getElementById('section-inscription').scrollIntoView({behavior:'smooth'})">Rejoindre Blink Sélect</button>
     </div>
     <div class="countdown-card">
-      <div class="brand-label" id="cd-label">Prochaine vente</div>
-      <h2 id="cd-brand">—</h2>
-      <div class="discount-badge" id="cd-discount">—</div>
+      <div class="brand-label" id="cd-label">Prochaine vente — Samedi 21 juin</div>
+      <h2 id="cd-brand">Silhouette</h2>
+      <div class="discount-badge" id="cd-discount">Jusqu'à −40%</div>
       <div class="timer">
         <div class="timer-unit"><span class="num" id="days">--</span><span class="lbl">Jours</span></div>
         <div class="timer-unit"><span class="num" id="hours">--</span><span class="lbl">Heures</span></div>
         <div class="timer-unit"><span class="num" id="mins">--</span><span class="lbl">Min</span></div>
         <div class="timer-unit"><span class="num" id="secs">--</span><span class="lbl">Sec</span></div>
       </div>
-      <p class="places-left"><strong id="cd-places">—</strong> sur <span id="cd-total">—</span></p>
+      <p class="places-left"><strong id="cd-places">18 places restantes</strong> sur <span id="cd-total">40</span></p>
     </div>
   </section>
   <hr class="divider">
@@ -202,8 +207,9 @@ footer p{font-size:0.73rem;color:var(--muted)}
         <div class="form-group"><label>Nom</label><input type="text" id="reg-nom" placeholder="Dupont"></div>
         <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="marie@email.fr"></div>
         <div class="form-group"><label>Téléphone</label><input type="tel" id="reg-tel" placeholder="06 00 00 00 00"></div>
-        <div class="form-group"><label>Mot de passe</label><input type="password" id="reg-pwd" placeholder="••••••••"></div>
-        <div class="form-group"><label>Confirmer</label><input type="password" id="reg-pwd2" placeholder="••••••••"></div>
+        <div class="form-group"><label>Confirmer l'email</label><input type="email" id="reg-email2" placeholder="marie@email.fr"></div>
+        <div class="form-group"><label>Mot de passe <span style="color:var(--muted);font-size:0.65rem">(6 car. min)</span></label><input type="password" id="reg-pwd" placeholder="••••••••"></div>
+        <div class="form-group"><label>Confirmer le mot de passe</label><input type="password" id="reg-pwd2" placeholder="••••••••"></div>
         <div class="form-group full"><label>Marque souhaitée</label><div class="select-wrap"><select id="reg-marque"></select></div></div>
       </div>
     </div>
@@ -219,16 +225,26 @@ footer p{font-size:0.73rem;color:var(--muted)}
     <h2>Choisir votre créneau</h2>
     <p style="font-size:0.83rem;color:var(--muted);margin-bottom:1.4rem">Samedi · 10h–13h &amp; 14h–19h · Sessions de 30 min</p>
     <div class="creneaux" id="creneaux-grid"></div>
+    <div class="check-group">
+      <label class="check-row required-check">
+        <input type="checkbox" id="chk-cgv">
+        <span>J'ai lu et j'accepte les <a onclick="document.getElementById('overlay-cgv').classList.add('active')">Conditions Générales de Vente</a> de Blink Sélect. <span style="color:var(--danger)">*</span></span>
+      </label>
+      <label class="check-row">
+        <input type="checkbox" id="chk-mail">
+        <span>Je souhaite recevoir les invitations et offres exclusives des prochaines ventes privées par email.</span>
+      </label>
+    </div>
     <div class="submit-area">
       <button class="btn-primary" onclick="submitInscription()">Confirmer l'inscription</button>
-      <p class="rgpd">En vous inscrivant, vous acceptez de recevoir les invitations Blink Sélect. Aucune donnée revendue.</p>
+      <p class="rgpd">Vos données sont protégées et ne sont jamais revendues. Désinscription en 1 clic.</p>
     </div>
     <div class="msg" id="reg-msg"></div>
   </section>
   <footer>
     <div class="logo">Blink <em>Sélect</em></div>
     <p>Ventes privées · Paris · Membres uniquement</p>
-    <p>contact@blink-select.fr</p>
+    <p>o.blink@hotmail.com</p>
   </footer>
 </div>
 
@@ -237,9 +253,8 @@ footer p{font-size:0.73rem;color:var(--muted)}
   <div class="client-wrap">
     <div class="client-header">
       <div><h1>Bonjour, <span id="client-name">—</span></h1><p>Voici vos réservations Blink Sélect</p></div>
-      <button class="nav-btn outline" onclick="logout()">Déconnexion</button>
     </div>
-    <div id="client-reservations"><div class="fb-loading"><div class="spinner"></div>Chargement…</div></div>
+    <div id="client-reservations"></div>
   </div>
 </div>
 
@@ -247,34 +262,36 @@ footer p{font-size:0.73rem;color:var(--muted)}
 <div class="page" id="page-admin">
   <div class="admin-layout">
     <aside class="admin-sidebar">
-      <h4>Dashboard</h4>
-      <div class="sidebar-item active" onclick="showAdminPanel('dashboard',this)">Vue d'ensemble</div>
-      <div class="sidebar-item" onclick="showAdminPanel('tracker',this)">Visiteurs</div>
-      <h4 style="margin-top:1.5rem">Gestion</h4>
-      <div class="sidebar-item" onclick="showAdminPanel('ventes',this)">Ventes privées</div>
-      <div class="sidebar-item" onclick="showAdminPanel('creneaux',this)">Créneaux</div>
-      <div class="sidebar-item" onclick="showAdminPanel('inscrits',this)">Inscrits</div>
-      <div class="sidebar-item" onclick="showAdminPanel('contenu',this)">Contenu du site</div>
-      <div style="padding:1.5rem;margin-top:auto"><button class="nav-btn outline" style="width:100%" onclick="logout()">Déconnexion</button></div>
+      <div>
+        <h4>Dashboard</h4>
+        <div class="sidebar-item active" onclick="showAdminPanel('dashboard',this)">Vue d'ensemble</div>
+        <div class="sidebar-item" onclick="showAdminPanel('tracker',this)">Visiteurs</div>
+        <h4 style="margin-top:1.5rem">Gestion</h4>
+        <div class="sidebar-item" onclick="showAdminPanel('ventes',this)">Ventes privées</div>
+        <div class="sidebar-item" onclick="showAdminPanel('creneaux',this)">Créneaux</div>
+        <div class="sidebar-item" onclick="showAdminPanel('inscrits',this)">Inscrits</div>
+        <div class="sidebar-item" onclick="showAdminPanel('contenu',this)">Contenu du site</div>
+      </div>
+      <div style="padding:1.5rem"><button class="nav-btn outline" style="width:100%" onclick="logout()">Déconnexion</button></div>
     </aside>
     <main class="admin-content">
       <div class="admin-panel active" id="panel-dashboard">
         <h2>Vue d'ensemble</h2>
         <div class="stats-grid">
-          <div class="stat-card"><div class="s-label">Membres inscrits</div><div class="s-num" id="stat-membres">—</div></div>
-          <div class="stat-card"><div class="s-label">Réservations actives</div><div class="s-num" id="stat-resas">—</div></div>
-          <div class="stat-card"><div class="s-label">Ventes programmées</div><div class="s-num" id="stat-ventes">—</div></div>
+          <div class="stat-card"><div class="s-label">Membres inscrits</div><div class="s-num" id="stat-membres">0</div></div>
+          <div class="stat-card"><div class="s-label">Réservations actives</div><div class="s-num" id="stat-resas">0</div></div>
+          <div class="stat-card"><div class="s-label">Ventes programmées</div><div class="s-num" id="stat-ventes">0</div></div>
         </div>
         <h2 style="font-size:1.2rem;margin-bottom:1rem">Dernières inscriptions</h2>
-        <table class="admin-table"><thead><tr><th>Nom</th><th>Email</th><th>Marque</th><th>Créneau</th><th>Statut</th></tr></thead><tbody id="dash-tbody"><tr><td colspan="5" class="fb-loading"><div class="spinner"></div>Chargement…</td></tr></tbody></table>
+        <table class="admin-table"><thead><tr><th>Nom</th><th>Email</th><th>Marque</th><th>Créneau</th><th>Statut</th></tr></thead><tbody id="dash-tbody"></tbody></table>
       </div>
       <div class="admin-panel" id="panel-tracker">
         <h2>Visiteurs</h2>
         <div class="tracker-grid">
-          <div class="tracker-card"><div class="s-label">Visites totales</div><div class="s-num" id="tr-total">—</div></div>
-          <div class="tracker-card"><div class="s-label">Visites aujourd'hui</div><div class="s-num" id="tr-today">—</div></div>
-          <div class="tracker-card"><div class="s-label">Cette semaine</div><div class="s-num" id="tr-week">—</div></div>
-          <div class="tracker-card"><div class="s-label">Inscriptions / visites</div><div class="s-num" id="tr-conv">—%</div></div>
+          <div class="tracker-card"><div class="s-label">Visites totales</div><div class="s-num" id="tr-total">0</div></div>
+          <div class="tracker-card"><div class="s-label">Visites aujourd'hui</div><div class="s-num" id="tr-today">0</div></div>
+          <div class="tracker-card"><div class="s-label">Cette semaine</div><div class="s-num" id="tr-week">0</div></div>
+          <div class="tracker-card"><div class="s-label">Taux de conversion</div><div class="s-num" id="tr-conv">0%</div></div>
         </div>
         <div class="edit-card">
           <div class="chart-bar-wrap">
@@ -282,6 +299,7 @@ footer p{font-size:0.73rem;color:var(--muted)}
             <div id="visits-chart"></div>
           </div>
         </div>
+        <p style="font-size:0.75rem;color:var(--muted);margin-top:1rem">⚠ Les données réelles seront disponibles une fois le site publié sur Vercel avec Firebase connecté.</p>
       </div>
       <div class="admin-panel" id="panel-ventes">
         <h2>Ventes privées</h2>
@@ -298,32 +316,76 @@ footer p{font-size:0.73rem;color:var(--muted)}
       </div>
       <div class="admin-panel" id="panel-inscrits">
         <h2>Inscrits</h2>
-        <table class="admin-table"><thead><tr><th>Nom</th><th>Email</th><th>Tél</th><th>Marque</th><th>Créneau</th><th>Actions</th></tr></thead><tbody id="inscrits-tbody"><tr><td colspan="6" class="fb-loading"><div class="spinner"></div>Chargement…</td></tr></tbody></table>
+        <table class="admin-table"><thead><tr><th>Nom</th><th>Email</th><th>Tél</th><th>Marque</th><th>Créneau</th><th>Actions</th></tr></thead><tbody id="inscrits-tbody"></tbody></table>
       </div>
       <div class="admin-panel" id="panel-contenu">
         <h2>Contenu du site</h2>
         <div class="edit-card">
           <h4>Section Hero</h4>
-          <div class="form-grid">
-            <div class="form-group full"><label>Tag</label><input type="text" id="c-tag"></div>
-            <div class="form-group full"><label>Titre principal</label><input type="text" id="c-title"></div>
-            <div class="form-group full"><label>Description</label><textarea id="c-desc" rows="3"></textarea></div>
+          <div class="form-grid" style="gap:1rem">
+            <div class="form-group full"><label>Tag</label><input type="text" id="c-tag" value="Ventes privées — Chaque samedi"></div>
+            <div class="form-group full"><label>Titre principal</label><input type="text" id="c-title" value="L'accès exclusif aux grandes marques d'optique"></div>
+            <div class="form-group full"><label>Description</label><textarea id="c-desc" rows="3">Chaque samedi, une marque partenaire. Des remises réservées aux membres inscrits. Sur invitation uniquement.</textarea></div>
           </div>
           <button class="btn-primary" onclick="saveContenu()">Appliquer</button>
         </div>
         <div class="edit-card" style="margin-top:1.2rem">
           <h4>Vente mise en avant (compteur)</h4>
-          <div class="form-grid">
-            <div class="form-group"><label>Marque</label><input type="text" id="c-cd-brand"></div>
-            <div class="form-group"><label>Remise</label><input type="text" id="c-cd-discount"></div>
-            <div class="form-group"><label>Places restantes</label><input type="number" id="c-cd-places" min="0"></div>
-            <div class="form-group"><label>Capacité totale</label><input type="number" id="c-cd-total" min="1"></div>
-            <div class="form-group full"><label>Label date</label><input type="text" id="c-cd-label"></div>
+          <div class="form-grid" style="gap:1rem">
+            <div class="form-group"><label>Marque</label><input type="text" id="c-cd-brand" value="Silhouette"></div>
+            <div class="form-group"><label>Remise</label><input type="text" id="c-cd-discount" value="Jusqu'à −40%"></div>
+            <div class="form-group"><label>Places restantes</label><input type="number" id="c-cd-places" value="18" min="0"></div>
+            <div class="form-group"><label>Capacité totale</label><input type="number" id="c-cd-total" value="40" min="1"></div>
+            <div class="form-group full"><label>Label date</label><input type="text" id="c-cd-label" value="Prochaine vente — Samedi 21 juin"></div>
           </div>
           <button class="btn-primary" onclick="saveCompteur()">Appliquer</button>
         </div>
       </div>
     </main>
+  </div>
+</div>
+
+<!-- MODAL MON COMPTE -->
+<div class="overlay" id="overlay-compte">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('overlay-compte').classList.remove('active')">✕</button>
+    <h3>Mon compte</h3>
+    <p class="sub">Modifier vos informations personnelles</p>
+    <div class="form-group" style="margin-bottom:1rem"><label>Prénom</label><input type="text" id="mc-prenom"></div>
+    <div class="form-group" style="margin-bottom:1rem"><label>Nom</label><input type="text" id="mc-nom"></div>
+    <div class="form-group" style="margin-bottom:1rem"><label>Téléphone</label><input type="tel" id="mc-tel"></div>
+    <div class="form-group" style="margin-bottom:1rem"><label>Nouveau mot de passe <span style="color:var(--muted);font-size:0.65rem">(laisser vide = inchangé)</span></label><input type="password" id="mc-pwd" placeholder="••••••••"></div>
+    <div class="form-group" style="margin-bottom:1rem"><label>Confirmer le mot de passe</label><input type="password" id="mc-pwd2" placeholder="••••••••"></div>
+    <div class="auth-error" id="mc-err"></div>
+    <div class="msg success" id="mc-ok" style="margin-bottom:0.5rem">Informations mises à jour ✓</div>
+    <button class="btn-primary" onclick="saveMonCompte()">Enregistrer</button>
+    <div style="margin-top:1.2rem;text-align:center">
+      <span style="font-size:0.78rem;color:var(--danger);cursor:pointer;text-decoration:underline" onclick="confirmDeleteAccount()">Supprimer mon compte</span>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CGV -->
+<div class="overlay" id="overlay-cgv">
+  <div class="modal" style="max-width:580px;max-height:80vh;overflow-y:auto">
+    <button class="modal-close" onclick="document.getElementById('overlay-cgv').classList.remove('active')">✕</button>
+    <h3>Conditions Générales de Vente</h3>
+    <p class="sub">Blink Sélect — Ventes privées</p>
+    <div style="font-size:0.82rem;color:var(--muted);line-height:1.8">
+      <p style="font-weight:500;color:var(--charcoal);margin-bottom:0.5rem">1. Objet</p>
+      <p style="margin-bottom:1rem">Les présentes CGV régissent l'accès aux ventes privées organisées par Blink Sélect, réservées aux membres inscrits. Chaque vente est limitée en nombre de places et en durée.</p>
+      <p style="font-weight:500;color:var(--charcoal);margin-bottom:0.5rem">2. Inscription et réservation</p>
+      <p style="margin-bottom:1rem">L'inscription est gratuite. La réservation d'un créneau est nominative et non transférable. En cas d'absence, le créneau est libéré sans remboursement d'éventuels frais annexes.</p>
+      <p style="font-weight:500;color:var(--charcoal);margin-bottom:0.5rem">3. Remises et tarifs</p>
+      <p style="margin-bottom:1rem">Les remises affichées sont valables uniquement durant la vente privée correspondante, dans la limite des stocks disponibles. Elles ne sont pas cumulables avec d'autres offres.</p>
+      <p style="font-weight:500;color:var(--charcoal);margin-bottom:0.5rem">4. Données personnelles (RGPD)</p>
+      <p style="margin-bottom:1rem">Vos données (nom, email, téléphone) sont collectées uniquement pour la gestion de votre espace membre et de vos réservations. Elles ne sont jamais revendues à des tiers. Vous disposez d'un droit d'accès, de rectification et de suppression en écrivant à o.blink@hotmail.com.</p>
+      <p style="font-weight:500;color:var(--charcoal);margin-bottom:0.5rem">5. Annulation</p>
+      <p style="margin-bottom:1rem">Blink Sélect se réserve le droit d'annuler ou de reporter une vente privée. Les membres inscrits en seront informés par email dans les meilleurs délais.</p>
+      <p style="font-weight:500;color:var(--charcoal);margin-bottom:0.5rem">6. Contact</p>
+      <p>Pour toute question : o.blink@hotmail.com</p>
+    </div>
+    <button class="btn-primary" style="width:100%;margin-top:1.5rem" onclick="document.getElementById('overlay-cgv').classList.remove('active')">Fermer</button>
   </div>
 </div>
 
@@ -337,7 +399,7 @@ footer p{font-size:0.73rem;color:var(--muted)}
       <div class="form-group"><label>Email</label><input type="email" id="l-email" placeholder="marie@email.fr"></div>
       <div class="form-group"><label>Mot de passe</label><input type="password" id="l-pwd" placeholder="••••••••"></div>
       <div class="auth-error" id="login-err">Email ou mot de passe incorrect.</div>
-      <button class="btn-primary" id="btn-login" onclick="doLogin()">Se connecter</button>
+      <button class="btn-primary" onclick="doLogin()">Se connecter</button>
       <div class="switch-auth">Pas encore membre ? <span onclick="switchAuth('register')">Créer un compte</span></div>
     </div>
     <div id="form-register" style="display:none">
@@ -352,622 +414,394 @@ footer p{font-size:0.73rem;color:var(--muted)}
   </div>
 </div>
 
-<!-- FIREBASE SDK -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, addDoc, collection, query, where, getDocs, deleteDoc, updateDoc, onSnapshot, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBOc8Ye1ZzkXeb5i_mcrXIbzlKZJzRcn-Y",
-  authDomain: "blinkselect.firebaseapp.com",
-  projectId: "blinkselect",
-  storageBucket: "blinkselect.firebasestorage.app",
-  messagingSenderId: "421124986107",
-  appId: "1:421124986107:web:72cd597e6eb07bee6b0c5e",
-  measurementId: "G-52JCHWC8Z5"
+<script>
+// ═══ STATE LOCAL (démo — remplacé par Firebase à la publication) ═══
+const DB = {
+  site:{tag:'Ventes privées — Chaque samedi',title:"L'accès exclusif aux grandes marques d'optique",desc:'Chaque samedi, une marque partenaire. Des remises réservées aux membres inscrits. Sur invitation uniquement.',cd:{brand:'Silhouette',discount:"Jusqu'à −40%",label:'Prochaine vente — Samedi 21 juin',places:18,total:40}},
+  ventes:[{id:1,marque:'Silhouette',date:'Samedi 21 juin 2025',remise:'−40%'},{id:2,marque:'Lindberg',date:'Samedi 28 juin 2025',remise:'−35%'},{id:3,marque:'ic! Berlin',date:'Samedi 5 juillet 2025',remise:'−45%'}],
+  creneaux:[{heure:'10h00',complet:false},{heure:'10h30',complet:false},{heure:'11h00',complet:false},{heure:'11h30',complet:false},{heure:'12h00',complet:false},{heure:'12h30',complet:false},{heure:'14h30',complet:false},{heure:'15h00',complet:false},{heure:'15h30',complet:false},{heure:'16h00',complet:false},{heure:'16h30',complet:false},{heure:'17h00',complet:false},{heure:'17h30',complet:false},{heure:'18h00',complet:false},{heure:'18h30',complet:false}],
+  users:[{id:'u1',prenom:'Marie',nom:'Dupont',email:'marie@test.fr',pwd:'test123',role:'client',tel:'06 11 22 33 44'}],
+  reservations:[{id:'r1',userId:'u1',marque:'Silhouette',creneau:'10h00',date:'Samedi 21 juin 2025',status:'confirmed'}],
+  tracker:{total:124,today:8,week:47,days:[{label:'Lun 9',count:5},{label:'Mar 10',count:12},{label:'Mer 11',count:7},{label:'Jeu 12',count:18},{label:'Ven 13',count:14},{label:'Sam 14',count:22},{label:'Dim 15',count:8}]},
+  nextId:20
 };
+let currentUser=null,selectedCreneau=null,selectedVenteId=null;
 
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const auth = getAuth(app);
-const db = getFirestore(app);
+function showPage(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');window.scrollTo(0,0);}
+function goHome(){showPage('public');renderPublic();}
 
-// ── ADMIN PASSWORD ──
-const ADMIN_PWD = 'blink2010*';
+// Timer
+function updateTimer(){const now=new Date(),next=new Date(now),d=now.getDay()===6?7:(6-now.getDay());next.setDate(now.getDate()+d);next.setHours(10,0,0,0);let diff=Math.max(0,next-now);const dd=Math.floor(diff/86400000);diff-=dd*86400000;const hh=Math.floor(diff/3600000);diff-=hh*3600000;const mm=Math.floor(diff/60000);diff-=mm*60000;const ss=Math.floor(diff/1000);document.getElementById('days').textContent=String(dd).padStart(2,'0');document.getElementById('hours').textContent=String(hh).padStart(2,'0');document.getElementById('mins').textContent=String(mm).padStart(2,'0');document.getElementById('secs').textContent=String(ss).padStart(2,'0');}
+updateTimer();setInterval(updateTimer,1000);
 
-// ── STATE ──
-let currentUser = null;
-let selectedCreneau = null;
-let selectedVenteId = null;
-let siteData = null;
-let ventesData = [];
-let creneauxData = [];
-
-// ── TRACKER VISITE ──
-async function trackVisit() {
-  try {
-    logEvent(analytics, 'page_view');
-    const today = new Date().toISOString().split('T')[0];
-    const ref = doc(db, 'tracker', today);
-    const snap = await getDoc(ref);
-    if (snap.exists()) {
-      await updateDoc(ref, { count: increment(1) });
-    } else {
-      await setDoc(ref, { count: 1, date: today });
-    }
-    const totalRef = doc(db, 'tracker', 'total');
-    const totalSnap = await getDoc(totalRef);
-    if (totalSnap.exists()) {
-      await updateDoc(totalRef, { count: increment(1) });
-    } else {
-      await setDoc(totalRef, { count: 1 });
-    }
-  } catch(e) {}
-}
-trackVisit();
-
-// ── PAGES ──
-window.showPage = (p) => {
-  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
-  document.getElementById('page-' + p).classList.add('active');
-  window.scrollTo(0, 0);
-};
-window.goHome = () => { showPage('public'); renderPublic(); };
-
-// ── TIMER ──
-function updateTimer() {
-  const now = new Date();
-  const next = new Date(now);
-  const d = now.getDay() === 6 ? 7 : (6 - now.getDay());
-  next.setDate(now.getDate() + d); next.setHours(10, 0, 0, 0);
-  let diff = Math.max(0, next - now);
-  const dd = Math.floor(diff / 86400000); diff -= dd * 86400000;
-  const hh = Math.floor(diff / 3600000); diff -= hh * 3600000;
-  const mm = Math.floor(diff / 60000); diff -= mm * 60000;
-  const ss = Math.floor(diff / 1000);
-  document.getElementById('days').textContent = String(dd).padStart(2,'0');
-  document.getElementById('hours').textContent = String(hh).padStart(2,'0');
-  document.getElementById('mins').textContent = String(mm).padStart(2,'0');
-  document.getElementById('secs').textContent = String(ss).padStart(2,'0');
-}
-updateTimer(); setInterval(updateTimer, 1000);
-
-// ── LOAD SITE DATA FROM FIRESTORE ──
-async function loadSiteData() {
-  try {
-    const snap = await getDoc(doc(db, 'config', 'site'));
-    if (snap.exists()) {
-      siteData = snap.data();
-    } else {
-      // Init par défaut
-      siteData = {
-        tag: 'Ventes privées — Chaque samedi',
-        title: "L'accès exclusif aux grandes marques d'optique",
-        desc: 'Chaque samedi, une marque partenaire. Des remises réservées aux membres inscrits. Sur invitation uniquement.',
-        cd: { brand: 'Silhouette', discount: "Jusqu'à −40%", label: 'Prochaine vente — Samedi 21 juin', places: 18, total: 40 }
-      };
-      await setDoc(doc(db, 'config', 'site'), siteData);
-    }
-  } catch(e) {
-    siteData = { tag:'Ventes privées — Chaque samedi', title:"L'accès exclusif aux grandes marques d'optique", desc:'Chaque samedi, une marque partenaire.', cd:{brand:'—',discount:'—',label:'—',places:0,total:40} };
-  }
-}
-
-async function loadVentes() {
-  try {
-    const snap = await getDocs(collection(db, 'ventes'));
-    ventesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (ventesData.length === 0) {
-      // Init par défaut
-      const defaults = [
-        { marque: 'Silhouette', date: 'Samedi 21 juin 2025', remise: '−40%' },
-        { marque: 'Lindberg', date: 'Samedi 28 juin 2025', remise: '−35%' },
-        { marque: 'ic! Berlin', date: 'Samedi 5 juillet 2025', remise: '−45%' }
-      ];
-      for (const v of defaults) {
-        const ref = await addDoc(collection(db, 'ventes'), v);
-        ventesData.push({ id: ref.id, ...v });
-      }
-    }
-  } catch(e) { ventesData = []; }
-}
-
-async function loadCreneaux() {
-  try {
-    const snap = await getDoc(doc(db, 'config', 'creneaux'));
-    if (snap.exists()) {
-      creneauxData = snap.data().liste || [];
-    } else {
-      creneauxData = [
-        {heure:'10h00',complet:false},{heure:'10h30',complet:false},{heure:'11h00',complet:false},
-        {heure:'11h30',complet:false},{heure:'12h00',complet:false},{heure:'12h30',complet:false},
-        {heure:'13h00',complet:false},{heure:'14h00',complet:false},{heure:'14h30',complet:false},
-        {heure:'15h00',complet:false},{heure:'15h30',complet:false},{heure:'16h00',complet:false},
-        {heure:'16h30',complet:false},{heure:'17h00',complet:false},{heure:'17h30',complet:false},
-        {heure:'18h00',complet:false},{heure:'18h30',complet:false}
-      ];
-      await setDoc(doc(db, 'config', 'creneaux'), { liste: creneauxData });
-    }
-  } catch(e) { creneauxData = []; }
-}
-
-// ── RENDER PUBLIC ──
-function renderPublic() {
-  if (!siteData) return;
-  const s = siteData;
-  document.getElementById('hero-tag').textContent = s.tag;
-  document.getElementById('hero-title').textContent = s.title;
-  document.getElementById('hero-desc').textContent = s.desc;
-  document.getElementById('cd-brand').textContent = s.cd.brand;
-  document.getElementById('cd-discount').textContent = s.cd.discount;
-  document.getElementById('cd-label').textContent = s.cd.label;
-  document.getElementById('cd-places').textContent = s.cd.places + ' places restantes';
-  document.getElementById('cd-total').textContent = s.cd.total;
-  // Vue form ou events
-  const step1 = document.getElementById('section-inscription');
-  if (currentUser && currentUser.role === 'client') {
-    step1.style.display = '';
-    document.getElementById('view-form').style.display = 'none';
-    document.getElementById('view-events').style.display = '';
+// Render public
+function renderPublic(){
+  const s=DB.site;
+  document.getElementById('hero-tag').textContent=s.tag;
+  document.getElementById('hero-title').textContent=s.title;
+  document.getElementById('hero-desc').textContent=s.desc;
+  document.getElementById('cd-brand').textContent=s.cd.brand;
+  document.getElementById('cd-discount').textContent=s.cd.discount;
+  document.getElementById('cd-label').textContent=s.cd.label;
+  document.getElementById('cd-places').textContent=s.cd.places+' places restantes';
+  document.getElementById('cd-total').textContent=s.cd.total;
+  const step1=document.getElementById('section-inscription');
+  if(currentUser&&currentUser.role==='client'){
+    step1.style.display='';
+    document.getElementById('view-form').style.display='none';
+    document.getElementById('view-events').style.display='';
     renderEvents();
   } else {
-    step1.style.display = '';
-    document.getElementById('view-form').style.display = '';
-    document.getElementById('view-events').style.display = 'none';
-    const sel = document.getElementById('reg-marque');
-    sel.innerHTML = ventesData.map(v => `<option value="${v.id}">${v.marque} — ${v.remise} · ${v.date}</option>`).join('');
+    step1.style.display='';
+    document.getElementById('view-form').style.display='';
+    document.getElementById('view-events').style.display='none';
+    document.getElementById('reg-marque').innerHTML=DB.ventes.map(v=>`<option value="${v.id}">${v.marque} — ${v.remise} · ${v.date}</option>`).join('');
   }
-  // Créneaux
-  const grid = document.getElementById('creneaux-grid');
-  grid.innerHTML = creneauxData.map((c, i) => c.complet
-    ? `<div class="creneau complet">${c.heure}<br><small>Complet</small></div>`
-    : `<div class="creneau" onclick="pickCreneau(this,${i})">${c.heure}</div>`
+  document.getElementById('creneaux-grid').innerHTML=DB.creneaux.map((c,i)=>c.complet
+    ?`<div class="creneau complet">${c.heure}<br><small>Complet</small></div>`
+    :`<div class="creneau" onclick="pickCreneau(this,${i})">${c.heure}</div>`
   ).join('');
-  selectedCreneau = null;
+  selectedCreneau=null;
 }
 
-function renderEvents() {
-  const list = document.getElementById('events-list');
-  list.innerHTML = ventesData.map(v => `
+function renderEvents(){
+  document.getElementById('events-list').innerHTML=DB.ventes.map(v=>`
     <div class="event-card">
-      <div class="event-card-info">
-        <h3>${v.marque}</h3>
-        <div class="event-meta">
-          <div class="event-meta-item">Date<strong>${v.date}</strong></div>
-          <div class="event-meta-item">Remise<strong>${v.remise}</strong></div>
-        </div>
-      </div>
-      <button class="btn-primary" style="white-space:nowrap;font-size:0.7rem;padding:0.7rem 1.4rem" onclick="selectVente('${v.id}')">S'inscrire →</button>
+      <div class="event-card-info"><h3>${v.marque}</h3><div class="event-meta"><div class="event-meta-item">Date<strong>${v.date}</strong></div><div class="event-meta-item">Remise<strong>${v.remise}</strong></div></div></div>
+      <button class="btn-primary" style="white-space:nowrap;font-size:0.7rem;padding:0.7rem 1.4rem" onclick="selectVente(${v.id})">S'inscrire →</button>
     </div>`).join('');
 }
 
-window.pickCreneau = (el, i) => {
-  document.querySelectorAll('#creneaux-grid .creneau').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedCreneau = creneauxData[i];
-};
+function pickCreneau(el,i){document.querySelectorAll('#creneaux-grid .creneau').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedCreneau=DB.creneaux[i];}
+function selectVente(id){selectedVenteId=id;document.getElementById('section-rdv').scrollIntoView({behavior:'smooth'});}
 
-window.selectVente = (id) => {
-  selectedVenteId = id;
-  document.getElementById('section-rdv').scrollIntoView({ behavior: 'smooth' });
-};
-
-// ── INSCRIPTION ──
-window.submitInscription = async () => {
-  if (!selectedCreneau) return showMsg('reg-msg', 'error', 'Veuillez choisir un créneau.');
-
-  if (currentUser && currentUser.role === 'client') {
-    if (!selectedVenteId) return showMsg('reg-msg', 'error', 'Veuillez choisir une vente.');
-    const vente = ventesData.find(v => v.id === selectedVenteId);
-    try {
-      await addDoc(collection(db, 'reservations'), {
-        userId: currentUser.uid,
-        prenom: currentUser.prenom,
-        nom: currentUser.nom,
-        email: currentUser.email,
-        marque: vente.marque,
-        creneau: selectedCreneau.heure,
-        date: vente.date,
-        status: 'confirmed',
-        createdAt: serverTimestamp()
-      });
-      logEvent(analytics, 'reservation_created');
-      selectedVenteId = null; selectedCreneau = null;
-      enterClient();
-    } catch(e) { showMsg('reg-msg', 'error', 'Erreur lors de la réservation.'); }
-    return;
+// Inscription
+function submitInscription(){
+  if(!selectedCreneau)return showMsg('reg-msg','error','Veuillez choisir un créneau.');
+  if(!(currentUser&&currentUser.role==='client')){
+    if(!document.getElementById('chk-cgv').checked)return showMsg('reg-msg','error','Vous devez accepter les Conditions Générales de Vente pour continuer.');
   }
-
-  const prenom = document.getElementById('reg-prenom').value.trim();
-  const nom = document.getElementById('reg-nom').value.trim();
-  const email = document.getElementById('reg-email').value.trim();
-  const tel = document.getElementById('reg-tel').value.trim();
-  const pwd = document.getElementById('reg-pwd').value;
-  const pwd2 = document.getElementById('reg-pwd2').value;
-  const marqueId = document.getElementById('reg-marque').value;
-
-  if (!prenom || !nom || !email || !pwd) return showMsg('reg-msg', 'error', 'Merci de remplir tous les champs obligatoires.');
-  if (pwd !== pwd2) return showMsg('reg-msg', 'error', 'Les mots de passe ne correspondent pas.');
-  if (pwd.length < 6) return showMsg('reg-msg', 'error', 'Mot de passe trop court (6 caractères minimum).');
-
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pwd);
-    await setDoc(doc(db, 'users', cred.user.uid), { prenom, nom, email, tel, role: 'client', createdAt: serverTimestamp() });
-    const vente = ventesData.find(v => v.id === marqueId);
-    await addDoc(collection(db, 'reservations'), {
-      userId: cred.user.uid, prenom, nom, email,
-      marque: vente.marque, creneau: selectedCreneau.heure, date: vente.date,
-      status: 'confirmed', createdAt: serverTimestamp()
-    });
-    logEvent(analytics, 'sign_up');
-    logEvent(analytics, 'reservation_created');
-  } catch(e) {
-    const msg = e.code === 'auth/email-already-in-use' ? 'Cet email est déjà utilisé.' : 'Erreur : ' + e.message;
-    showMsg('reg-msg', 'error', msg);
+  if(currentUser&&currentUser.role==='client'){
+    if(!selectedVenteId)return showMsg('reg-msg','error','Veuillez choisir une vente.');
+    const v=DB.ventes.find(x=>String(x.id)===String(selectedVenteId));
+    DB.reservations.push({id:'r'+DB.nextId++,userId:currentUser.id,marque:v.marque,creneau:selectedCreneau.heure,date:v.date,status:'confirmed'});
+    selectedVenteId=null;selectedCreneau=null;
+    enterClient();return;
   }
-};
-
-// ── AUTH ──
-window.openAuth = (mode) => { document.getElementById('overlay-auth').classList.add('active'); switchAuth(mode); };
-window.closeAuth = () => document.getElementById('overlay-auth').classList.remove('active');
-window.switchAuth = (m) => {
-  document.getElementById('form-login').style.display = m === 'login' ? 'block' : 'none';
-  document.getElementById('form-register').style.display = m === 'register' ? 'block' : 'none';
-  document.getElementById('login-err').style.display = 'none';
-  document.getElementById('reg-err').style.display = 'none';
-};
-
-window.doLogin = async () => {
-  const email = document.getElementById('l-email').value.trim();
-  const pwd = document.getElementById('l-pwd').value;
-  const btn = document.getElementById('btn-login');
-  // Admin par mot de passe seul
-  if (pwd === ADMIN_PWD) { currentUser = { uid: 'admin', prenom: 'Admin', role: 'admin' }; closeAuth(); enterAdmin(); return; }
-  btn.textContent = '...'; btn.disabled = true;
-  try {
-    await signInWithEmailAndPassword(auth, email, pwd);
-  } catch(e) {
-    document.getElementById('login-err').style.display = 'block';
-    btn.textContent = 'Se connecter'; btn.disabled = false;
-  }
-};
-
-window.doQuickRegister = async () => {
-  const email = document.getElementById('mr-email').value.trim();
-  const pwd = document.getElementById('mr-pwd').value;
-  if (!email || !pwd) return;
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pwd);
-    await setDoc(doc(db, 'users', cred.user.uid), { prenom: 'Membre', nom: '', email, tel: '', role: 'client', createdAt: serverTimestamp() });
-    closeAuth();
-  } catch(e) { document.getElementById('reg-err').style.display = 'block'; }
-};
-
-window.logout = async () => {
-  if (currentUser?.role === 'admin') {
-    currentUser = null; showPage('public'); updateNav(false);
-    document.getElementById('section-inscription').style.display = '';
-    renderPublic(); return;
-  }
-  await signOut(auth);
-};
-
-// ── AUTH STATE ──
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    const snap = await getDoc(doc(db, 'users', user.uid));
-    const data = snap.exists() ? snap.data() : { prenom: 'Membre', nom: '', role: 'client' };
-    currentUser = { uid: user.uid, email: user.email, ...data };
-    document.getElementById('btn-login') && (document.getElementById('btn-login').textContent = 'Se connecter', document.getElementById('btn-login').disabled = false);
-    closeAuth();
-    updateNav(true, 'client');
-    renderPublic();
-    enterClient();
-  } else {
-    if (currentUser?.role !== 'admin') {
-      currentUser = null;
-      updateNav(false);
-      document.getElementById('section-inscription').style.display = '';
-      renderPublic();
-    }
-  }
-});
-
-// ── CLIENT ──
-async function enterClient() {
-  document.getElementById('client-name').textContent = currentUser.prenom || 'Membre';
-  showPage('client');
-  updateNav(true, 'client');
-  const container = document.getElementById('client-reservations');
-  container.innerHTML = '<div class="fb-loading"><div class="spinner"></div>Chargement…</div>';
-  try {
-    const q = query(collection(db, 'reservations'), where('userId', '==', currentUser.uid));
-    const snap = await getDocs(q);
-    const resas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (!resas.length) {
-      container.innerHTML = '<div class="empty-state"><strong>Aucune réservation</strong><p>Inscrivez-vous à la prochaine vente depuis la page d\'accueil.</p></div>';
-    } else {
-      container.innerHTML = resas.map(r => `
-        <div class="resa-card">
-          <div class="rc-top"><h3>${r.marque}</h3><span class="resa-badge confirmed">Confirmée</span></div>
-          <div class="resa-meta">
-            <div class="resa-meta-item">Date<strong>${r.date}</strong></div>
-            <div class="resa-meta-item">Créneau<strong>${r.creneau}</strong></div>
-            <div class="resa-meta-item">Statut<strong>✓ Place confirmée</strong></div>
-          </div>
-          <div style="margin-top:1.2rem">
-            <button class="btn-primary" style="font-size:0.7rem;padding:0.65rem 1.4rem" onclick="downloadTicket('${r.id}','${currentUser.prenom} ${currentUser.nom}','${r.marque}','${r.date}','${r.creneau}')">↓ Télécharger mon ticket</button>
-          </div>
-        </div>`).join('');
-    }
-  } catch(e) { container.innerHTML = '<div class="empty-state">Erreur de chargement.</div>'; }
+  const prenom=document.getElementById('reg-prenom').value.trim();
+  const nom=document.getElementById('reg-nom').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const tel=document.getElementById('reg-tel').value.trim();
+  const pwd=document.getElementById('reg-pwd').value;
+  const pwd2=document.getElementById('reg-pwd2').value;
+  const marqueId=document.getElementById('reg-marque').value;
+  const email2=document.getElementById('reg-email2').value.trim();
+  if(!prenom||!nom||!email||!pwd)return showMsg('reg-msg','error','Merci de remplir tous les champs obligatoires.');
+  if(email!==email2)return showMsg('reg-msg','error','Les adresses email ne correspondent pas.');
+  if(pwd.length<6)return showMsg('reg-msg','error','Le mot de passe doit contenir au moins 6 caractères.');
+  if(pwd!==pwd2)return showMsg('reg-msg','error','Les mots de passe ne correspondent pas.');
+  if(DB.users.find(u=>u.email===email))return showMsg('reg-msg','error','Cette adresse email est déjà associée à un compte.');
+  if(tel&&DB.users.find(u=>u.tel&&u.tel.replace(/\s/g,'')===tel.replace(/\s/g,'')))return showMsg('reg-msg','error','Ce numéro de téléphone est déjà utilisé.');
+  const uid='u'+DB.nextId++;
+  const newsletter=document.getElementById('chk-mail')?.checked||false;
+  DB.users.push({id:uid,prenom,nom,email,pwd,role:'client',tel,newsletter});
+  const v=DB.ventes.find(x=>String(x.id)===String(marqueId));
+  DB.reservations.push({id:'r'+DB.nextId++,userId:uid,marque:v.marque,creneau:selectedCreneau.heure,date:v.date,status:'confirmed'});
+  currentUser=DB.users.find(u=>u.email===email);
+  updateNav(true,'client');enterClient();
 }
 
-// ── ADMIN ──
-async function enterAdmin() {
-  showPage('admin'); updateNav(true, 'admin');
-  await renderDashboard();
+// Auth
+function openAuth(m){document.getElementById('overlay-auth').classList.add('active');switchAuth(m);}
+function closeAuth(){document.getElementById('overlay-auth').classList.remove('active');}
+function switchAuth(m){document.getElementById('form-login').style.display=m==='login'?'block':'none';document.getElementById('form-register').style.display=m==='register'?'block':'none';document.getElementById('login-err').style.display='none';document.getElementById('reg-err').style.display='none';}
+
+function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pwd=document.getElementById('l-pwd').value;
+  if(pwd==='blink2010*'){currentUser={id:'admin',prenom:'Admin',role:'admin'};closeAuth();enterAdmin();return;}
+  const u=DB.users.find(u=>u.email===email&&u.pwd===pwd);
+  if(!u){document.getElementById('login-err').style.display='block';return;}
+  currentUser=u;closeAuth();updateNav(true,'client');enterClient();
 }
 
-window.showAdminPanel = (name, el) => {
-  document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
-  document.getElementById('panel-' + name).classList.add('active');
-  if (el) el.classList.add('active');
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'tracker') renderTracker();
-  if (name === 'ventes') renderVentes();
-  if (name === 'creneaux') renderCreneauxAdmin();
-  if (name === 'inscrits') renderInscrits();
-  if (name === 'contenu') renderContenu();
-};
-
-async function renderDashboard() {
-  try {
-    const [usersSnap, resasSnap, ventesSnap] = await Promise.all([
-      getDocs(collection(db, 'users')),
-      getDocs(collection(db, 'reservations')),
-      getDocs(collection(db, 'ventes'))
-    ]);
-    document.getElementById('stat-membres').textContent = usersSnap.size;
-    document.getElementById('stat-resas').textContent = resasSnap.size;
-    document.getElementById('stat-ventes').textContent = ventesSnap.size;
-    const resas = resasSnap.docs.map(d => ({ id: d.id, ...d.data() })).slice(-8).reverse();
-    document.getElementById('dash-tbody').innerHTML = resas.map(r =>
-      `<tr><td>${r.prenom} ${r.nom}</td><td>${r.email}</td><td>${r.marque}</td><td>${r.creneau}</td><td><span class="resa-badge confirmed" style="font-size:0.65rem">Confirmée</span></td></tr>`
-    ).join('') || '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:1.5rem">Aucune inscription</td></tr>';
-  } catch(e) {}
+function doQuickRegister(){
+  const email=document.getElementById('mr-email').value.trim();
+  const pwd=document.getElementById('mr-pwd').value;
+  if(!email||!pwd)return;
+  if(DB.users.find(u=>u.email===email)){document.getElementById('reg-err').style.display='block';return;}
+  const uid='u'+DB.nextId++;
+  DB.users.push({id:uid,prenom:'Membre',nom:'',email,pwd,role:'client',tel:''});
+  currentUser=DB.users.find(u=>u.email===email);
+  closeAuth();updateNav(true,'client');enterClient();
 }
 
-async function renderTracker() {
-  try {
-    const totalSnap = await getDoc(doc(db, 'tracker', 'total'));
-    const total = totalSnap.exists() ? totalSnap.data().count : 0;
-    const today = new Date().toISOString().split('T')[0];
-    const todaySnap = await getDoc(doc(db, 'tracker', today));
-    const todayCount = todaySnap.exists() ? todaySnap.data().count : 0;
-    // 7 jours
-    let weekTotal = 0;
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(); d.setDate(d.getDate() - i);
-      const key = d.toISOString().split('T')[0];
-      const snap = await getDoc(doc(db, 'tracker', key));
-      const count = snap.exists() ? snap.data().count : 0;
-      weekTotal += count;
-      days.push({ label: d.toLocaleDateString('fr', { weekday: 'short', day: 'numeric' }), count });
-    }
-    const resasSnap = await getDocs(collection(db, 'reservations'));
-    const conv = total > 0 ? Math.round((resasSnap.size / total) * 100) : 0;
-    document.getElementById('tr-total').textContent = total;
-    document.getElementById('tr-today').textContent = todayCount;
-    document.getElementById('tr-week').textContent = weekTotal;
-    document.getElementById('tr-conv').textContent = conv + '%';
-    const maxCount = Math.max(...days.map(d => d.count), 1);
-    document.getElementById('visits-chart').innerHTML = days.map(d => `
-      <div class="bar-row">
-        <span class="bar-label">${d.label}</span>
-        <div class="bar-track"><div class="bar-fill" style="width:${Math.round((d.count/maxCount)*100)}%"></div></div>
-        <span class="bar-val">${d.count}</span>
-      </div>`).join('');
-  } catch(e) { document.getElementById('visits-chart').innerHTML = '<p style="color:var(--muted);font-size:0.82rem">Données indisponibles.</p>'; }
+function logout(){
+  currentUser=null;showPage('public');updateNav(false);
+  document.getElementById('section-inscription').style.display='';
+  renderPublic();
 }
 
-async function renderVentes() {
-  await loadVentes();
-  const list = document.getElementById('ventes-list');
-  list.innerHTML = ventesData.map(v => `
+// Client
+function enterClient(){
+  document.getElementById('client-name').textContent=currentUser.prenom||'Membre';
+  showPage('client');updateNav(true,'client');
+  const resas=DB.reservations.filter(r=>r.userId===currentUser.id);
+  const c=document.getElementById('client-reservations');
+  if(!resas.length){c.innerHTML='<div class="empty-state"><strong>Aucune réservation</strong><p>Inscrivez-vous à la prochaine vente depuis la page d\'accueil.</p></div>';return;}
+  c.innerHTML=resas.map(r=>`
+    <div class="resa-card">
+      <div class="rc-top"><h3>${r.marque}</h3><span class="resa-badge confirmed">Confirmée</span></div>
+      <div class="resa-meta">
+        <div class="resa-meta-item">Date<strong>${r.date}</strong></div>
+        <div class="resa-meta-item">Créneau<strong>${r.creneau}</strong></div>
+        <div class="resa-meta-item">Statut<strong>✓ Place confirmée</strong></div>
+      </div>
+      <div style="margin-top:1.2rem">
+        <button class="btn-primary" style="font-size:0.7rem;padding:0.65rem 1.4rem" onclick="downloadTicket('${r.id}','${currentUser.prenom} ${currentUser.nom||''}','${r.marque}','${r.date}','${r.creneau}')">↓ Télécharger mon ticket</button>
+      </div>
+    </div>`).join('');
+}
+
+// Admin
+function enterAdmin(){showPage('admin');updateNav(true,'admin');renderDashboard();}
+
+function showAdminPanel(name,el){
+  document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(el)el.classList.add('active');
+  if(name==='dashboard')renderDashboard();
+  if(name==='tracker')renderTracker();
+  if(name==='ventes')renderVentes();
+  if(name==='creneaux')renderCreneauxAdmin();
+  if(name==='inscrits')renderInscrits();
+  if(name==='contenu')renderContenu();
+}
+
+function renderDashboard(){
+  document.getElementById('stat-membres').textContent=DB.users.filter(u=>u.role==='client').length;
+  document.getElementById('stat-resas').textContent=DB.reservations.length;
+  document.getElementById('stat-ventes').textContent=DB.ventes.length;
+  const resas=DB.reservations.slice(-8).reverse();
+  document.getElementById('dash-tbody').innerHTML=resas.map(r=>{
+    const u=DB.users.find(x=>x.id===r.userId)||{prenom:'—',nom:'',email:'—'};
+    return `<tr><td>${u.prenom} ${u.nom}</td><td>${u.email}</td><td>${r.marque}</td><td>${r.creneau}</td><td><span class="resa-badge confirmed" style="font-size:0.65rem">Confirmée</span></td></tr>`;
+  }).join('')||'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:1.5rem">Aucune inscription</td></tr>';
+}
+
+function renderTracker(){
+  const t=DB.tracker;
+  document.getElementById('tr-total').textContent=t.total;
+  document.getElementById('tr-today').textContent=t.today;
+  document.getElementById('tr-week').textContent=t.week;
+  const conv=t.total>0?Math.round((DB.reservations.length/t.total)*100):0;
+  document.getElementById('tr-conv').textContent=conv+'%';
+  const max=Math.max(...t.days.map(d=>d.count),1);
+  document.getElementById('visits-chart').innerHTML=t.days.map(d=>`
+    <div class="bar-row">
+      <span class="bar-label">${d.label}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round((d.count/max)*100)}%"></div></div>
+      <span class="bar-val">${d.count}</span>
+    </div>`).join('');
+}
+
+function renderVentes(){
+  document.getElementById('ventes-list').innerHTML=DB.ventes.map(v=>`
     <div class="edit-card" id="vente-card-${v.id}">
-      <h4>${v.marque} — ${v.date} <button class="tbl-btn danger" onclick="deleteVente('${v.id}')">Supprimer</button></h4>
-      <div class="form-grid">
+      <h4>${v.marque} — ${v.date} <button class="tbl-btn danger" onclick="deleteVente(${v.id})">Supprimer</button></h4>
+      <div class="form-grid" style="gap:1rem">
         <div class="form-group"><label>Marque</label><input type="text" id="v-marque-${v.id}" value="${v.marque}"></div>
         <div class="form-group"><label>Remise</label><input type="text" id="v-remise-${v.id}" value="${v.remise}"></div>
         <div class="form-group full"><label>Date</label><input type="text" id="v-date-${v.id}" value="${v.date}"></div>
       </div>
-      <button class="btn-primary" onclick="saveVente('${v.id}')">Enregistrer</button>
+      <button class="btn-primary" onclick="saveVente(${v.id})">Enregistrer</button>
     </div>`).join('');
 }
 
-window.saveVente = async (id) => {
-  try {
-    await updateDoc(doc(db, 'ventes', id), {
-      marque: document.getElementById('v-marque-' + id).value,
-      remise: document.getElementById('v-remise-' + id).value,
-      date: document.getElementById('v-date-' + id).value
-    });
-    await loadVentes(); renderVentes(); renderPublic(); toast('Vente mise à jour ✓');
-  } catch(e) { toast('Erreur lors de la sauvegarde'); }
-};
+function saveVente(id){const v=DB.ventes.find(x=>x.id===id);v.marque=document.getElementById('v-marque-'+id).value;v.remise=document.getElementById('v-remise-'+id).value;v.date=document.getElementById('v-date-'+id).value;renderVentes();renderPublic();toast('Vente mise à jour ✓');}
+function deleteVente(id){if(!confirm('Supprimer cette vente ?'))return;DB.ventes=DB.ventes.filter(v=>v.id!==id);renderVentes();renderPublic();}
+function addVente(){const id=DB.nextId++;DB.ventes.push({id,marque:'Nouvelle marque',date:'Samedi —',remise:'−30%'});renderVentes();setTimeout(()=>document.getElementById('vente-card-'+id)?.scrollIntoView({behavior:'smooth'}),50);}
 
-window.deleteVente = async (id) => {
-  if (!confirm('Supprimer cette vente ?')) return;
-  await deleteDoc(doc(db, 'ventes', id));
-  await loadVentes(); renderVentes(); renderPublic();
-};
-
-window.addVente = async () => {
-  const ref = await addDoc(collection(db, 'ventes'), { marque: 'Nouvelle marque', date: 'Samedi —', remise: '−30%' });
-  await loadVentes(); renderVentes();
-};
-
-function renderCreneauxAdmin() {
-  document.getElementById('creneaux-admin').innerHTML = creneauxData.map((c, i) => `
+function renderCreneauxAdmin(){
+  document.getElementById('creneaux-admin').innerHTML=DB.creneaux.map((c,i)=>`
     <div class="creneau-row">
       <input type="text" value="${c.heure}" id="cr-h-${i}" style="width:90px;padding:0.35rem 0.6rem;font-size:0.8rem;border:0.5px solid var(--border);font-family:'Inter',sans-serif;background:#fff;outline:none">
-      <label style="font-size:0.78rem;color:var(--muted);display:flex;align-items:center;gap:0.4rem">
-        <input type="checkbox" id="cr-c-${i}" ${c.complet ? 'checked' : ''}>Complet
-      </label>
+      <label style="font-size:0.78rem;color:var(--muted);display:flex;align-items:center;gap:0.4rem"><input type="checkbox" id="cr-c-${i}" ${c.complet?'checked':''}>Complet</label>
       <button class="tbl-btn danger" onclick="deleteCreneau(${i})">✕</button>
     </div>`).join('');
 }
 
-window.saveCreneaux = async () => {
-  creneauxData = creneauxData.map((_, i) => ({
-    heure: document.getElementById('cr-h-' + i).value,
-    complet: document.getElementById('cr-c-' + i).checked
-  }));
-  await setDoc(doc(db, 'config', 'creneaux'), { liste: creneauxData });
-  renderPublic(); toast('Créneaux enregistrés ✓');
-};
+function saveCreneaux(){DB.creneaux=DB.creneaux.map((_,i)=>({heure:document.getElementById('cr-h-'+i).value,complet:document.getElementById('cr-c-'+i).checked}));renderPublic();toast('Créneaux enregistrés ✓');}
+function addCreneau(){DB.creneaux.push({heure:'19h00',complet:false});renderCreneauxAdmin();}
+function deleteCreneau(i){DB.creneaux.splice(i,1);renderCreneauxAdmin();}
 
-window.addCreneau = () => { creneauxData.push({ heure: '16h00', complet: false }); renderCreneauxAdmin(); };
-window.deleteCreneau = (i) => { creneauxData.splice(i, 1); renderCreneauxAdmin(); };
-
-async function renderInscrits() {
-  try {
-    const [usersSnap, resasSnap] = await Promise.all([getDocs(collection(db, 'users')), getDocs(collection(db, 'reservations'))]);
-    const users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const resas = resasSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    document.getElementById('inscrits-tbody').innerHTML = users.map(u => {
-      const r = resas.find(x => x.userId === u.id);
-      return `<tr>
-        <td>${u.prenom} ${u.nom}</td><td>${u.email}</td><td>${u.tel || '—'}</td>
-        <td>${r ? r.marque : '—'}</td><td>${r ? r.creneau : '—'}</td>
-        <td><button class="tbl-btn danger" onclick="deleteUser('${u.id}')">Supprimer</button></td>
-      </tr>`;
-    }).join('') || '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:1.5rem">Aucun inscrit</td></tr>';
-  } catch(e) {}
+function renderInscrits(){
+  const clients=DB.users.filter(u=>u.role==='client');
+  document.getElementById('inscrits-tbody').innerHTML=clients.map(u=>{
+    const r=DB.reservations.find(x=>x.userId===u.id);
+    return `<tr><td>${u.prenom} ${u.nom}</td><td>${u.email}</td><td>${u.tel||'—'}</td><td>${r?r.marque:'—'}</td><td>${r?r.creneau:'—'}</td><td><button class="tbl-btn danger" onclick="deleteUser('${u.id}')">Supprimer</button></td></tr>`;
+  }).join('')||'<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:1.5rem">Aucun inscrit</td></tr>';
 }
 
-window.deleteUser = async (id) => {
-  if (!confirm('Supprimer cet inscrit et ses réservations ?')) return;
-  try {
-    await deleteDoc(doc(db, 'users', id));
-    const q = query(collection(db, 'reservations'), where('userId', '==', id));
-    const snap = await getDocs(q);
-    for (const d of snap.docs) await deleteDoc(d.ref);
-    renderInscrits(); renderDashboard(); toast('Inscrit supprimé');
-  } catch(e) { toast('Erreur suppression'); }
-};
+function deleteUser(id){if(!confirm('Supprimer cet inscrit ?'))return;DB.users=DB.users.filter(u=>u.id!==id);DB.reservations=DB.reservations.filter(r=>r.userId!==id);renderInscrits();renderDashboard();toast('Inscrit supprimé');}
 
-async function renderContenu() {
-  const snap = await getDoc(doc(db, 'config', 'site'));
-  const s = snap.exists() ? snap.data() : siteData;
-  document.getElementById('c-tag').value = s.tag;
-  document.getElementById('c-title').value = s.title;
-  document.getElementById('c-desc').value = s.desc;
-  document.getElementById('c-cd-brand').value = s.cd.brand;
-  document.getElementById('c-cd-discount').value = s.cd.discount;
-  document.getElementById('c-cd-places').value = s.cd.places;
-  document.getElementById('c-cd-total').value = s.cd.total;
-  document.getElementById('c-cd-label').value = s.cd.label;
+function renderContenu(){
+  const s=DB.site;
+  document.getElementById('c-tag').value=s.tag;document.getElementById('c-title').value=s.title;document.getElementById('c-desc').value=s.desc;
+  document.getElementById('c-cd-brand').value=s.cd.brand;document.getElementById('c-cd-discount').value=s.cd.discount;
+  document.getElementById('c-cd-places').value=s.cd.places;document.getElementById('c-cd-total').value=s.cd.total;document.getElementById('c-cd-label').value=s.cd.label;
 }
 
-window.saveContenu = async () => {
-  siteData.tag = document.getElementById('c-tag').value;
-  siteData.title = document.getElementById('c-title').value;
-  siteData.desc = document.getElementById('c-desc').value;
-  await updateDoc(doc(db, 'config', 'site'), { tag: siteData.tag, title: siteData.title, desc: siteData.desc });
-  renderPublic(); toast('Contenu mis à jour ✓');
-};
+function saveContenu(){DB.site.tag=document.getElementById('c-tag').value;DB.site.title=document.getElementById('c-title').value;DB.site.desc=document.getElementById('c-desc').value;renderPublic();toast('Contenu mis à jour ✓');}
+function saveCompteur(){DB.site.cd.brand=document.getElementById('c-cd-brand').value;DB.site.cd.discount=document.getElementById('c-cd-discount').value;DB.site.cd.places=parseInt(document.getElementById('c-cd-places').value)||0;DB.site.cd.total=parseInt(document.getElementById('c-cd-total').value)||40;DB.site.cd.label=document.getElementById('c-cd-label').value;renderPublic();toast('Compteur mis à jour ✓');}
 
-window.saveCompteur = async () => {
-  siteData.cd.brand = document.getElementById('c-cd-brand').value;
-  siteData.cd.discount = document.getElementById('c-cd-discount').value;
-  siteData.cd.places = parseInt(document.getElementById('c-cd-places').value) || 0;
-  siteData.cd.total = parseInt(document.getElementById('c-cd-total').value) || 40;
-  siteData.cd.label = document.getElementById('c-cd-label').value;
-  await updateDoc(doc(db, 'config', 'site'), { cd: siteData.cd });
-  renderPublic(); toast('Compteur mis à jour ✓');
-};
+function updateNav(loggedIn,role){
+  const nl=document.getElementById('nav-links');
+  if(!loggedIn){nl.innerHTML=`<a href="#section-inscription">S'inscrire</a><a href="#section-rdv">RDV</a><button class="nav-btn outline" onclick="openAuth('login')">Mon espace</button>`;}
+  else if(role==='client'){nl.innerHTML=`<a onclick="goHome()">Accueil</a><button class="nav-btn outline" onclick="enterClient()">Mes réservations</button><div class="account-menu-wrap"><button class="nav-btn outline" onclick="toggleAccountMenu()">Mon compte ▾</button><div class="account-dropdown" id="account-dropdown"><div class="account-item" onclick="openMonCompte()">Modifier mes infos</div><div class="account-item danger" onclick="logout()">Déconnexion</div></div></div>`;}
+  else{nl.innerHTML=`<a onclick="goHome()">Voir le site</a><button class="nav-btn" onclick="enterAdmin()">Admin</button><button class="nav-btn outline" onclick="logout()">Déconnexion</button>`;}
+}
 
-// ── NAV ──
-function updateNav(loggedIn, role) {
-  const nl = document.getElementById('nav-links');
-  if (!loggedIn) {
-    nl.innerHTML = `<a href="#section-inscription">S'inscrire</a><a href="#section-rdv">RDV</a><button class="nav-btn outline" onclick="openAuth('login')">Mon espace</button>`;
-  } else if (role === 'client') {
-    nl.innerHTML = `<a onclick="goHome()">Accueil</a><button class="nav-btn outline" onclick="enterClient()">Mes réservations</button><button class="nav-btn outline" onclick="logout()">Déconnexion</button>`;
-  } else {
-    nl.innerHTML = `<a onclick="goHome()">Voir le site</a><button class="nav-btn" onclick="enterAdmin()">Admin</button><button class="nav-btn outline" onclick="logout()">Déconnexion</button>`;
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'2rem',right:'2rem',background:'var(--charcoal)',color:'var(--ivory)',padding:'0.7rem 1.4rem',fontSize:'0.8rem',zIndex:'9999',letterSpacing:'0.05em',transition:'opacity 0.4s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400)},2200);}
+
+function toggleAccountMenu(){
+  const d=document.getElementById('account-dropdown');
+  if(d)d.classList.toggle('open');
+}
+document.addEventListener('click',function(e){
+  const wrap=document.querySelector('.account-menu-wrap');
+  if(wrap&&!wrap.contains(e.target)){
+    const d=document.getElementById('account-dropdown');
+    if(d)d.classList.remove('open');
   }
+});
+
+function openMonCompte(){
+  const d=document.getElementById('account-dropdown');
+  if(d)d.classList.remove('open');
+  document.getElementById('mc-prenom').value=currentUser.prenom||'';
+  document.getElementById('mc-nom').value=currentUser.nom||'';
+  document.getElementById('mc-tel').value=currentUser.tel||'';
+  document.getElementById('mc-pwd').value='';
+  document.getElementById('mc-pwd2').value='';
+  document.getElementById('mc-err').style.display='none';
+  document.getElementById('mc-ok').style.display='none';
+  document.getElementById('overlay-compte').classList.add('active');
 }
 
-// ── TOAST ──
-window.toast = (msg) => {
-  const t = document.createElement('div');
-  t.textContent = msg;
-  Object.assign(t.style, { position: 'fixed', bottom: '2rem', right: '2rem', background: 'var(--charcoal)', color: 'var(--ivory)', padding: '0.7rem 1.4rem', fontSize: '0.8rem', zIndex: '9999', letterSpacing: '0.05em', transition: 'opacity 0.4s' });
-  document.body.appendChild(t);
-  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 2200);
-};
-
-// ── TICKET ──
-window.downloadTicket = (id, nom, marque, date, creneau) => {
-  const w = window.open('', '_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Inter:wght@300;400;500&display=swap');
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Inter',sans-serif;background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}
-    .ticket{border:1px solid #1A1A18;width:480px;overflow:hidden}
-    .ticket-top{background:#1A1A18;color:#fff;padding:2rem 2.5rem}
-    .logo{font-family:'Playfair Display',serif;font-size:1.1rem;letter-spacing:0.08em;margin-bottom:1.2rem;color:#B8A87A}
-    h1{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:400;margin-bottom:0.3rem}
-    .sub{font-size:0.78rem;opacity:0.6}
-    .mid{padding:1.8rem 2.5rem;border-bottom:1px dashed #E5E5E0}
-    .row{display:flex;justify-content:space-between;margin-bottom:1rem}.row:last-child{margin:0}
-    .lbl{font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:#6B6B65;margin-bottom:0.2rem}
-    .val{font-size:0.9rem;font-weight:500}
-    .bot{padding:1.5rem 2.5rem;display:flex;justify-content:space-between;align-items:center}
-    .ref{font-size:0.65rem;letter-spacing:0.1em;color:#6B6B65}
-    .badge{background:#1A1A18;color:#fff;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.3rem 0.8rem}
-    @media print{button{display:none}}
-  </style></head><body>
-  <div>
-    <div class="ticket">
-      <div class="ticket-top"><div class="logo">Blink Sélect</div><h1>Vente Privée</h1><p class="sub">Accès réservé aux membres · Sur invitation uniquement</p></div>
-      <div class="mid">
-        <div class="row"><div><div class="lbl">Titulaire</div><div class="val">${nom}</div></div><div><div class="lbl">Marque</div><div class="val">${marque}</div></div></div>
-        <div class="row"><div><div class="lbl">Date</div><div class="val">${date}</div></div><div><div class="lbl">Créneau</div><div class="val">${creneau}</div></div></div>
-      </div>
-      <div class="bot"><span class="ref">Réf. BLNK-${id.slice(-6).toUpperCase()}</span><span class="badge">✓ Confirmé</span></div>
-    </div>
-    <div style="text-align:center;margin-top:1.2rem">
-      <button onclick="window.print()" style="background:#1A1A18;color:#fff;border:none;padding:0.7rem 1.8rem;font-family:'Inter',sans-serif;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer">Imprimer / Enregistrer en PDF</button>
-    </div>
-  </div></body></html>`);
-  w.document.close();
-};
-
-function showMsg(id, type, txt) {
-  const el = document.getElementById(id);
-  el.className = 'msg ' + type + ' active';
-  el.textContent = txt;
-  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+function saveMonCompte(){
+  const prenom=document.getElementById('mc-prenom').value.trim();
+  const nom=document.getElementById('mc-nom').value.trim();
+  const tel=document.getElementById('mc-tel').value.trim();
+  const pwd=document.getElementById('mc-pwd').value;
+  const pwd2=document.getElementById('mc-pwd2').value;
+  const errEl=document.getElementById('mc-err');
+  errEl.style.display='none';
+  if(!prenom||!nom){errEl.textContent='Prénom et nom requis.';errEl.style.display='block';return;}
+  if(pwd&&pwd.length<6){errEl.textContent='Mot de passe trop court (6 car. min).';errEl.style.display='block';return;}
+  if(pwd&&pwd!==pwd2){errEl.textContent='Les mots de passe ne correspondent pas.';errEl.style.display='block';return;}
+  // check tel doublon sauf si c'est le sien
+  if(tel&&DB.users.find(u=>u.id!==currentUser.id&&u.tel&&u.tel.replace(/\s/g,'')===tel.replace(/\s/g,''))){errEl.textContent='Ce numéro est déjà utilisé.';errEl.style.display='block';return;}
+  const u=DB.users.find(u=>u.id===currentUser.id);
+  if(u){u.prenom=prenom;u.nom=nom;u.tel=tel;if(pwd)u.pwd=pwd;}
+  currentUser.prenom=prenom;currentUser.nom=nom;currentUser.tel=tel;
+  document.getElementById('mc-ok').style.display='block';
+  document.getElementById('client-name').textContent=prenom;
 }
 
-// ── INIT ──
-document.getElementById('overlay-auth').addEventListener('click', function(e) { if (e.target === this) closeAuth(); });
-window.enterAdmin = () => enterAdmin();
-window.enterClient = () => enterClient();
+function confirmDeleteAccount(){
+  if(!confirm('Supprimer définitivement votre compte et toutes vos réservations ?'))return;
+  DB.users=DB.users.filter(u=>u.id!==currentUser.id);
+  DB.reservations=DB.reservations.filter(r=>r.userId!==currentUser.id);
+  document.getElementById('overlay-compte').classList.remove('active');
+  logout();
+  toast('Compte supprimé.');
+}
 
-// Chargement initial
-(async () => {
-  await Promise.all([loadSiteData(), loadVentes(), loadCreneaux()]);
-  renderPublic();
-})();
+function showMsg(id,type,txt){const el=document.getElementById(id);el.className='msg '+type+' active';el.textContent=txt;el.scrollIntoView({behavior:'smooth',block:'nearest'});}
+
+function downloadTicket(id,nom,marque,date,creneau){
+  if(!window.jspdf){alert('La librairie PDF est en cours de chargement, réessayez dans un instant.');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a5',orientation:'portrait'});
+  const W=148,H=210;
+  const ref='BLNK-'+id.slice(-6).toUpperCase();
+
+  // Fond noir header
+  doc.setFillColor(26,26,24);
+  doc.rect(0,0,W,60,'F');
+
+  // Logo doré
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.setTextColor(184,168,122);
+  doc.text('Blink Sélect',12,18);
+
+  // Titre blanc
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(20);
+  doc.setTextColor(255,255,255);
+  doc.text('Vente Privée',12,32);
+
+  // Sous-titre
+  doc.setFontSize(8);
+  doc.setTextColor(180,180,180);
+  doc.text('Accès réservé aux membres · Sur invitation uniquement',12,42);
+
+  // Séparateur
+  doc.setDrawColor(229,229,224);
+  doc.setLineWidth(0.3);
+  doc.line(12,68,W-12,68);
+
+  // Labels + valeurs
+  const fields=[
+    ['TITULAIRE',nom,12,80],
+    ['MARQUE',marque,W/2+4,80],
+    ['DATE',date,12,100],
+    ['CRÉNEAU',creneau,W/2+4,100],
+  ];
+  fields.forEach(([lbl,val,x,y])=>{
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.setTextColor(107,107,101);
+    doc.text(lbl,x,y);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(10);
+    doc.setTextColor(26,26,24);
+    doc.text(val,x,y+7);
+  });
+
+  // Séparateur bas
+  doc.setDrawColor(229,229,224);
+  doc.line(12,115,W-12,115);
+
+  // Référence
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(107,107,101);
+  doc.text('Réf. '+ref,12,126);
+
+  // Badge confirmé
+  doc.setFillColor(26,26,24);
+  doc.roundedRect(W-48,119,36,10,1,1,'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(7);
+  doc.setTextColor(255,255,255);
+  doc.text('✓ CONFIRMÉ',W-44,125.5);
+
+  // Footer
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.setTextColor(180,180,180);
+  doc.text('o.blink@hotmail.com · blink-select.fr',12,H-10);
+
+  doc.save('ticket-blink-select-'+ref+'.pdf');
+}
+
+document.getElementById('overlay-auth').addEventListener('click',function(e){if(e.target===this)closeAuth();});
+renderPublic();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>
