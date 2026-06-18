@@ -307,7 +307,18 @@ footer p{font-size:0.73rem;color:var(--muted)}
   </div>
 </div>
 
-<!-- PAGE LOGIN -->
+<!-- PAGE VÉRIFICATION EMAIL -->
+<div class="page" id="page-verify">
+  <div style="max-width:440px;margin:5rem auto;padding:0 2rem;text-align:center">
+    <div class="gate-tag">Vérification</div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;margin:0.6rem 0">Confirmez votre email</h1>
+    <p style="font-size:0.85rem;color:var(--muted);margin-top:0.6rem;line-height:1.7">Un code à 6 chiffres a été envoyé à <strong id="verify-email-display"></strong>. Saisissez-le ci-dessous.</p>
+    <input type="text" id="verify-code-input" maxlength="6" placeholder="000000" style="width:100%;margin-top:2rem;text-align:center;font-size:2rem;letter-spacing:0.4em;padding:1rem;border:0.5px solid var(--border);font-family:'Inter',sans-serif;background:#fff;outline:none">
+    <div class="msg" id="verify-msg" style="margin-top:1rem"></div>
+    <button class="btn-primary" style="width:100%;margin-top:1.2rem;padding:1rem" onclick="submitVerifyCode()">Valider mon compte →</button>
+    <p style="margin-top:1.2rem;font-size:0.78rem;color:var(--muted)">Pas reçu ? <span style="color:var(--charcoal);cursor:pointer;text-decoration:underline" onclick="resendVerifyCode()">Renvoyer le code</span></p>
+  </div>
+</div>
 <div class="page" id="page-login">
   <div style="display:grid;grid-template-columns:1fr 1fr;min-height:100vh">
     <!-- Gauche : visuel -->
@@ -804,6 +815,11 @@ function logout(){
 // ══════════════════════════════════════
 // REGISTER PAGE
 // ══════════════════════════════════════
+// Stockage temporaire pendant vérification
+let pendingUser=null;
+let verifyCode=null;
+let verifyExpiry=null;
+
 function submitRegisterPage(){
   const prenom=document.getElementById('r2-prenom').value.trim();
   const nom=document.getElementById('r2-nom').value.trim();
@@ -820,11 +836,40 @@ function submitRegisterPage(){
   if(DB.users.find(u=>u.email===email))return showMsg('r2-msg','error','Cette adresse email est déjà utilisée.');
   if(tel&&DB.users.find(u=>u.tel&&u.tel.replace(/ /g,'')===tel.replace(/ /g,'')))return showMsg('r2-msg','error','Ce numéro de téléphone est déjà utilisé.');
   const newsletter=document.getElementById('r2-mail').checked;
+  // Stocker en attente de vérification
+  pendingUser={prenom,nom,email,pwd,tel,newsletter};
+  verifyCode=String(Math.floor(100000+Math.random()*900000));
+  verifyExpiry=Date.now()+10*60*1000;
+  // Envoyer le code par mail
+  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'verification',to:email,prenom,code:verifyCode})}).catch(()=>{});
+  // Aller sur la page de vérification
+  document.getElementById('verify-email-display').textContent=email;
+  document.getElementById('verify-code-input').value='';
+  showMsg('verify-msg','','');
+  showPage('verify');
+}
+
+function submitVerifyCode(){
+  const input=document.getElementById('verify-code-input').value.trim();
+  if(!pendingUser)return showMsg('verify-msg','error','Session expirée. Recommencez l\'inscription.');
+  if(Date.now()>verifyExpiry)return showMsg('verify-msg','error','Code expiré. Demandez un nouveau code.');
+  if(input!==verifyCode)return showMsg('verify-msg','error','Code incorrect. Vérifiez votre email.');
+  // Créer le compte
   const uid='u'+DB.nextId++;
-  DB.users.push({id:uid,prenom,nom,email,pwd,role:'client',tel,newsletter});
-  currentUser=DB.users.find(u=>u.email===email);
+  DB.users.push({id:uid,...pendingUser,role:'client'});
+  currentUser=DB.users.find(u=>u.email===pendingUser.email);
+  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'inscription',to:pendingUser.email,prenom:pendingUser.prenom})}).catch(()=>{});
+  pendingUser=null;verifyCode=null;verifyExpiry=null;
   updateNav('client');
   showPage('rdv');renderRdvPage(true);
+}
+
+function resendVerifyCode(){
+  if(!pendingUser)return;
+  verifyCode=String(Math.floor(100000+Math.random()*900000));
+  verifyExpiry=Date.now()+10*60*1000;
+  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'verification',to:pendingUser.email,prenom:pendingUser.prenom,code:verifyCode})}).catch(()=>{});
+  showMsg('verify-msg','success','Code renvoyé ! Vérifiez votre boîte mail.');
 }
 
 // ══════════════════════════════════════
@@ -902,6 +947,8 @@ function submitRdv(){
   DB.reservations.push(resa);
   lastConfirm=resa;
   selectedVenteId=null;selectedCreneau=null;
+  // Mail pending
+  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'pending',to:resa.email,prenom:resa.prenom,marque:resa.marque,date:resa.date,creneau:resa.creneau,ref:'BLNK-'+rid.slice(-6).toUpperCase()})}).catch(()=>{});
   showPage('confirm');
   renderPendingConfirm(resa);
   // Simulation : passage en confirmé après 15-25 sec (en prod = email Brevo après 10-30 min)
@@ -925,6 +972,8 @@ function acceptResa(rid){
   r.status='confirmed';
   markCreneauComplet(r.creneau);
   lastConfirm=r;
+  // Mail confirmation
+  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'confirmed',to:r.email,prenom:r.prenom,marque:r.marque,date:r.date,creneau:r.creneau,ref:'BLNK-'+rid.slice(-6).toUpperCase()})}).catch(()=>{});
   // Si on est encore sur la page confirm, passer à la vue acceptée
   if(document.getElementById('page-confirm').classList.contains('active')){
     document.getElementById('confirm-pending').style.display='none';
@@ -1160,7 +1209,15 @@ function filterResas(){
   document.querySelectorAll('#resas-tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';});
 }
 function adminCancelResaPanel(id){const r=DB.reservations.find(x=>x.id===id);if(r){r.status='cancelled';const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c)c.complet=false;}renderReservations();renderDashboard();toast('Annulée.');}
-function adminConfirmResaPanel(id){const r=DB.reservations.find(x=>x.id===id);if(r){r.status='confirmed';markCreneauComplet(r.creneau);}renderReservations();renderDashboard();toast('Réactivée.');}
+function adminConfirmResaPanel(id){
+  const r=DB.reservations.find(x=>x.id===id);
+  if(r){
+    r.status='confirmed';
+    markCreneauComplet(r.creneau);
+    fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'confirmed',to:r.email,prenom:r.prenom,marque:r.marque,date:r.date,creneau:r.creneau,ref:'BLNK-'+id.slice(-6).toUpperCase()})}).catch(()=>{});
+  }
+  renderReservations();renderDashboard();toast('Confirmée — mail envoyé ✓');
+}
 function adminDeleteResa(id){if(!confirm('Supprimer définitivement ?'))return;const r=DB.reservations.find(x=>x.id===id);if(r){const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c&&r.status==='confirmed')c.complet=false;}DB.reservations=DB.reservations.filter(x=>x.id!==id);renderReservations();renderDashboard();toast('Supprimée.');}
 
 function renderContenu(){
