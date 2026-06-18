@@ -133,6 +133,39 @@ module.exports = async (req, res) => {
   <div class="footer">Blink Sélect · o.blink@hotmail.com</div>
 </div>
 </body></html>`;
+  } else if (type === 'verification') {
+    const { code } = req.body;
+    subject = 'Votre code de vérification — Blink Sélect';
+    htmlContent = `
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<style>
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FAFAF8;margin:0;padding:0}
+  .wrap{max-width:560px;margin:40px auto;background:#fff;border:1px solid #E5E5E0}
+  .header{background:#1A1A18;padding:32px 40px}
+  .logo{font-size:20px;letter-spacing:0.06em;color:#B8A87A;font-weight:500}
+  .body{padding:40px}
+  .tag{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#B8A87A;margin-bottom:12px}
+  h1{font-size:24px;font-weight:400;color:#1A1A18;margin:0 0 16px}
+  p{font-size:14px;color:#6B6B65;line-height:1.8;margin:0 0 16px}
+  .code-box{background:#1A1A18;color:#B8A87A;font-size:36px;font-weight:700;letter-spacing:0.3em;text-align:center;padding:28px;margin:28px 0}
+  .info{background:#fff8e8;border:1px solid #d4b86a;padding:16px;font-size:13px;color:#9a7d2e;line-height:1.7}
+  .footer{padding:24px 40px;border-top:1px solid #E5E5E0;font-size:12px;color:#6B6B65}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header"><div class="logo">Blink Sélect</div></div>
+  <div class="body">
+    <div class="tag">Vérification</div>
+    <h1>Bonjour ${prenom},</h1>
+    <p>Entrez ce code pour confirmer votre adresse email et finaliser votre inscription.</p>
+    <div class="code-box">${code}</div>
+    <div class="info">⏱ Ce code est valable <strong>10 minutes</strong>. Ne le partagez avec personne.</div>
+  </div>
+  <div class="footer">Blink Sélect · o.blink@hotmail.com<br>Si vous n'avez pas créé de compte, ignorez cet email.</div>
+</div>
+</body></html>`;
   } else {
     return res.status(400).json({ error: 'Type inconnu' });
   }
