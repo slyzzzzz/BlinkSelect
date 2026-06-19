@@ -636,7 +636,8 @@ footer p{font-size:0.73rem;color:var(--muted)}
     <div class="form-group" style="margin-bottom:1rem"><label>Nom</label><input type="text" id="mc-nom"></div>
     <div class="form-group" style="margin-bottom:1rem"><label>Téléphone</label><input type="tel" id="mc-tel"></div>
     <div class="form-group" style="margin-bottom:1rem"><label>Nouveau mot de passe <span style="font-size:0.65rem;color:var(--muted)">(vide = inchangé)</span></label><input type="password" id="mc-pwd" placeholder="••••••••"></div>
-    <div class="form-group" style="margin-bottom:1rem"><label>Confirmer</label><input type="password" id="mc-pwd2" placeholder="••••••••"></div>
+    <div class="form-group" style="margin-bottom:1rem"><label>Mot de passe actuel <span style="font-size:0.65rem;color:var(--muted)">(requis pour changer)</span></label><input type="password" id="mc-pwd-actuel" placeholder="••••••••"></div>
+    <div class="form-group" style="margin-bottom:1rem"><label>Confirmer nouveau mot de passe</label><input type="password" id="mc-pwd2" placeholder="••••••••"></div>
     <div class="auth-error" id="mc-err"></div>
     <div class="msg success" id="mc-ok">Informations mises à jour ✓</div>
     <button class="btn-primary" onclick="saveMonCompte()">Enregistrer</button>
@@ -672,7 +673,8 @@ footer p{font-size:0.73rem;color:var(--muted)}
 <!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, addDoc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBOc8Ye1ZzkXeb5i_mcrXIbzlKZJzRcn-Y",
@@ -685,8 +687,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 window._db = db;
-window._firebase = { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, addDoc, query, orderBy };
+window._auth = auth;
+window._firebase = { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs };
+window._firebaseAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential, sendPasswordResetEmail };
 
 // ── INIT : charger toutes les données depuis Firestore ──
 async function loadFromFirestore() {
@@ -701,7 +706,6 @@ async function loadFromFirestore() {
     if (!ventesSnap.empty) {
       DB.ventes = ventesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     } else {
-      // Initialiser avec les données par défaut
       for (const v of DB.ventes) {
         await F.setDoc(F.doc(db, 'ventes', String(v.id)), { marque: v.marque, date: v.date, remise: v.remise });
       }
@@ -711,21 +715,45 @@ async function loadFromFirestore() {
     const creneauxSnap = await F.getDoc(F.doc(db, 'config', 'creneaux'));
     if (creneauxSnap.exists()) DB.creneaux = creneauxSnap.data().list;
 
-    // USERS
-    const usersSnap = await F.getDocs(F.collection(db, 'users'));
-    if (!usersSnap.empty) DB.users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
     // RESERVATIONS
     const resasSnap = await F.getDocs(F.collection(db, 'reservations'));
     if (!resasSnap.empty) DB.reservations = resasSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
   } catch(e) { console.warn('Firebase load error:', e); }
-
-  renderPublic();
-  document.getElementById('app-loader')?.remove();
 }
 
-window._saveUser = async (user) => {
+// ── AUTH STATE : session persistante ──
+onAuthStateChanged(auth, async (firebaseUser) => {
+  await loadFromFirestore();
+
+  if (firebaseUser) {
+    // Vérifier si c'est l'admin
+    if (firebaseUser.email === 'optical.blink@gmail.com') {
+      currentUser = { id: firebaseUser.uid, prenom: 'Admin', role: 'admin', email: firebaseUser.email };
+      closeGate();
+      updateNav('admin');
+      enterAdmin();
+      return;
+    }
+    // Charger le profil Firestore
+    const F = window._firebase;
+    try {
+      const snap = await F.getDoc(F.doc(db, 'users', firebaseUser.uid));
+      if (snap.exists()) {
+        currentUser = { id: firebaseUser.uid, ...snap.data(), role: 'client' };
+        closeGate();
+        updateNav('client');
+        enterClient();
+        return;
+      }
+    } catch(e) { console.warn('Profile load error:', e); }
+  }
+
+  // Non connecté
+  currentUser = null;
+  renderPublic();
+  document.getElementById('app-loader')?.remove();
+});
   const F = window._firebase;
   const { id, ...data } = user;
   await F.setDoc(F.doc(db, 'users', id), data);
@@ -899,44 +927,57 @@ function switchAuth(m){
 }
 function openForgotPwd(){switchAuth('forgot');}
 
-function doLoginPage(){
-  const email=document.getElementById('pl-email').value.trim();
+async function doLoginPage(){
+  const email=document.getElementById('pl-email').value.trim().toLowerCase();
   const pwd=document.getElementById('pl-pwd').value;
   const errEl=document.getElementById('pl-err');
   errEl.style.display='none';
-  if(pwd==='blink2010*'){currentUser={id:'admin',prenom:'Admin',role:'admin'};closeGate();updateNav('admin');enterAdmin();return;}
-  const u=DB.users.find(u=>u.email===email&&u.pwd===pwd);
-  if(!u){errEl.style.display='block';return;}
-  currentUser=u;closeGate();updateNav('client');enterClient();
+  try {
+    await window._firebaseAuth.signInWithEmailAndPassword(window._auth, email, pwd);
+    closeGate();
+  } catch(e) {
+    errEl.style.display='block';
+  }
 }
 
-function doForgotPage(){
-  const email=document.getElementById('fp-email').value.trim();
+async function doForgotPage(){
+  const email=document.getElementById('fp-email').value.trim().toLowerCase();
   if(!email)return;
-  const exists=DB.users.find(u=>u.email===email);
-  showMsg('fp-msg','success',exists?'Un lien de réinitialisation a été envoyé à '+email+'.':'Aucun compte trouvé avec cet email.');
+  try {
+    await window._firebaseAuth.sendPasswordResetEmail(window._auth, email);
+    showMsg('fp-msg','success','Lien de réinitialisation envoyé à '+email+'.');
+  } catch(e) {
+    showMsg('fp-msg','error','Aucun compte trouvé avec cet email.');
+  }
 }
 
-function doLogin(){
-  const email=document.getElementById('l-email').value.trim();
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim().toLowerCase();
   const pwd=document.getElementById('l-pwd').value;
-  if(pwd==='blink2010*'){currentUser={id:'admin',prenom:'Admin',role:'admin'};closeAuth();closeGate();updateNav('admin');enterAdmin();return;}
-  const u=DB.users.find(u=>u.email===email&&u.pwd===pwd);
-  if(!u){document.getElementById('login-err').style.display='block';return;}
-  currentUser=u;closeAuth();closeGate();updateNav('client');enterClient();
+  document.getElementById('login-err').style.display='none';
+  try {
+    await window._firebaseAuth.signInWithEmailAndPassword(window._auth, email, pwd);
+    closeAuth();closeGate();
+  } catch(e) {
+    document.getElementById('login-err').style.display='block';
+  }
 }
 
-function doForgotPwd(){
-  const email=document.getElementById('forgot-email').value.trim();
+async function doForgotPwd(){
+  const email=document.getElementById('forgot-email').value.trim().toLowerCase();
   if(!email)return;
-  const exists=DB.users.find(u=>u.email===email);
-  // Simulation — avec Firebase ce serait sendPasswordResetEmail()
-  showMsg('forgot-msg','success',exists?'Un lien de réinitialisation a été envoyé à '+email+'.':'Aucun compte trouvé avec cet email.');
+  try {
+    await window._firebaseAuth.sendPasswordResetEmail(window._auth, email);
+    showMsg('forgot-msg','success','Lien de réinitialisation envoyé à '+email+'.');
+  } catch(e) {
+    showMsg('forgot-msg','error','Aucun compte trouvé avec cet email.');
+  }
 }
 
-function logout(){
+async function logout(){
+  await window._firebaseAuth.signOut(window._auth);
   currentUser=null;updateNav(null);showPage('public');renderPublic();
-    showGate();
+  showGate();
 }
 
 // ══════════════════════════════════════
@@ -995,21 +1036,27 @@ function submitRegisterPage(){
   setTimeout(()=>{const f=document.querySelector('.otp-box');if(f)f.focus();},100);
 }
 
-function submitVerifyCode(){
+async function submitVerifyCode(){
   const boxes=document.querySelectorAll('.otp-box');
   const input=Array.from(boxes).map(b=>b.value).join('').trim();
   if(!pendingUser)return showMsg('verify-msg','error','Session expirée. Recommencez l\'inscription.');
   if(Date.now()>verifyExpiry)return showMsg('verify-msg','error','Code expiré. Demandez un nouveau code.');
   if(input!==verifyCode)return showMsg('verify-msg','error','Code incorrect. Vérifiez votre email.');
-  const uid='u'+Date.now();
-  const newUser={id:uid,...pendingUser,role:'client'};
-  DB.users.push(newUser);
-  if(window._saveUser)window._saveUser(newUser);
-  currentUser=newUser;
-  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'inscription',to:pendingUser.email,prenom:pendingUser.prenom})}).catch(()=>{});
-  pendingUser=null;verifyCode=null;verifyExpiry=null;
-  updateNav('client');
-  showPage('rdv');renderRdvPage(true);
+  try {
+    const cred=await window._firebaseAuth.createUserWithEmailAndPassword(window._auth,pendingUser.email,pendingUser.pwd);
+    const uid=cred.user.uid;
+    const profile={prenom:pendingUser.prenom,nom:pendingUser.nom,email:pendingUser.email,tel:pendingUser.tel,newsletter:pendingUser.newsletter,role:'client',createdAt:Date.now()};
+    await window._saveUser({id:uid,...profile});
+    currentUser={id:uid,...profile};
+    DB.users.push(currentUser);
+    fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'inscription',to:pendingUser.email,prenom:pendingUser.prenom})}).catch(()=>{});
+    pendingUser=null;verifyCode=null;verifyExpiry=null;
+    updateNav('client');
+    showPage('rdv');renderRdvPage(true);
+  } catch(e) {
+    if(e.code==='auth/email-already-in-use')showMsg('verify-msg','error','Cette adresse email est déjà utilisée.');
+    else showMsg('verify-msg','error','Erreur lors de la création du compte. Réessayez.');
+  }
 }
 
 function resendVerifyCode(){
@@ -1277,24 +1324,40 @@ function openMonCompte(){
   document.getElementById('overlay-compte').classList.add('active');
 }
 
-function saveMonCompte(){
+async function saveMonCompte(){
   const prenom=document.getElementById('mc-prenom').value.trim();
   const nom=document.getElementById('mc-nom').value.trim();
   const tel=document.getElementById('mc-tel').value.trim();
   const pwd=document.getElementById('mc-pwd').value;
   const pwd2=document.getElementById('mc-pwd2').value;
+  const pwdActuel=document.getElementById('mc-pwd-actuel')?.value||'';
   const errEl=document.getElementById('mc-err');errEl.style.display='none';
   if(!prenom||!nom){errEl.textContent='Prénom et nom requis.';errEl.style.display='block';return;}
   if(tel&&!validateTel(tel)){errEl.textContent='Numéro de téléphone invalide (format français, ex: 06 12 34 56 78).';errEl.style.display='block';return;}
   if(pwd&&pwd.length<6){errEl.textContent='Mot de passe trop court (6 car. min).';errEl.style.display='block';return;}
   if(pwd&&pwd!==pwd2){errEl.textContent='Les mots de passe ne correspondent pas.';errEl.style.display='block';return;}
   const telFormatted=tel?formatTel(tel):'';
-  if(telFormatted&&DB.users.find(u=>u.id!==currentUser.id&&u.tel&&u.tel.replace(/ /g,'')===telFormatted.replace(/ /g,''))){errEl.textContent='Ce numéro est déjà utilisé.';errEl.style.display='block';return;}
-  const u=DB.users.find(u=>u.id===currentUser.id);
-  if(u){u.prenom=prenom;u.nom=nom;u.tel=telFormatted;if(pwd)u.pwd=pwd;if(window._saveUser)window._saveUser(u);}
-  currentUser.prenom=prenom;currentUser.nom=nom;currentUser.tel=telFormatted;
-  document.getElementById('mc-ok').style.display='block';
-  document.getElementById('client-name').textContent=prenom;
+  try {
+    // Changer le mot de passe si demandé
+    if(pwd&&pwdActuel){
+      const FA=window._firebaseAuth;
+      const cred=FA.EmailAuthProvider.credential(currentUser.email,pwdActuel);
+      await FA.reauthenticateWithCredential(window._auth.currentUser,cred);
+      await FA.updatePassword(window._auth.currentUser,pwd);
+    }
+    // Sauvegarder le profil
+    const updates={prenom,nom,tel:telFormatted};
+    const u=DB.users.find(u=>u.id===currentUser.id);
+    if(u){Object.assign(u,updates);}
+    currentUser.prenom=prenom;currentUser.nom=nom;currentUser.tel=telFormatted;
+    await window._saveUser({id:currentUser.id,...currentUser});
+    document.getElementById('mc-ok').style.display='block';
+    document.getElementById('client-name').textContent=prenom;
+  } catch(e) {
+    if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')errEl.textContent='Mot de passe actuel incorrect.';
+    else errEl.textContent='Erreur lors de la mise à jour.';
+    errEl.style.display='block';
+  }
 }
 
 function confirmDeleteAccount(){
