@@ -754,6 +754,8 @@ onAuthStateChanged(auth, async (firebaseUser) => {
   renderPublic();
   document.getElementById('app-loader')?.remove();
 });
+
+window._saveUser = async (user) => {
   const F = window._firebase;
   const { id, ...data } = user;
   await F.setDoc(F.doc(db, 'users', id), data);
