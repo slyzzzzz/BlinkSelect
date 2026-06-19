@@ -177,6 +177,13 @@ nav a:hover{color:var(--charcoal)}
 footer{border-top:0.5px solid var(--border);padding:1.8rem 3rem;display:flex;justify-content:space-between;align-items:center;margin-top:4rem}
 footer .logo{font-size:1rem}
 footer p{font-size:0.73rem;color:var(--muted)}
+/* OTP BOXES */
+.otp-box{width:48px;height:58px;text-align:center;font-size:1.6rem;font-family:'Playfair Display',serif;border:0.5px solid var(--border);background:#fff;outline:none;color:var(--charcoal);transition:border-color 0.15s}
+.otp-box:focus{border-color:var(--charcoal)}
+.otp-box.filled{border-color:var(--charcoal);background:var(--ivory)}
+/* CAROUSEL DOT */
+.c-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.5);cursor:pointer;transition:background 0.2s}
+.c-dot.active{background:#fff}
 @media(max-width:720px){
   nav{padding:0.9rem 1.2rem}.nav-links{gap:0.6rem}.nav-links a{display:none}.logo{font-size:1.15rem}.nav-btn{font-size:0.68rem;padding:0.5rem 0.9rem}
   .hero{grid-template-columns:1fr;padding:2rem 1.2rem 1.5rem;gap:1.5rem}.hero h1{font-size:1.7rem}.hero p{font-size:0.88rem;margin-bottom:1.4rem}
@@ -198,6 +205,9 @@ footer p{font-size:0.73rem;color:var(--muted)}
   .stats-grid{grid-template-columns:1fr 1fr;gap:0.7rem}.stat-card{padding:1rem}.stat-card .s-num{font-size:1.6rem}
   .admin-table{font-size:0.76rem}.admin-table th,.admin-table td{padding:0.5rem 0.4rem}
   .step-line{width:30px}
+  .otp-box{width:40px;height:50px;font-size:1.3rem}
+  #otp-boxes{gap:0.4rem}
+  .confirm-card{margin:2rem 1.2rem;padding:1.8rem 1.2rem}
 }
 </style>
 </head>
@@ -256,6 +266,13 @@ footer p{font-size:0.73rem;color:var(--muted)}
       <h1 style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:400;margin:0.5rem 0 0.4rem">Prochains événements</h1>
       <p style="font-size:0.88rem;color:var(--muted);margin-bottom:2rem">Réservez votre créneau avant que les places ne soient prises.</p>
       <div id="home-events"></div>
+      <!-- CARROUSEL PHOTOS -->
+      <div id="home-carousel-wrap" style="display:none;margin-top:2rem;position:relative;overflow:hidden;border:0.5px solid var(--border)">
+        <div id="home-carousel-track" style="display:flex;transition:transform 0.5s ease"></div>
+        <button onclick="carouselPrev()" style="position:absolute;left:0.8rem;top:50%;transform:translateY(-50%);background:rgba(26,26,24,0.7);color:#fff;border:none;width:36px;height:36px;font-size:1.1rem;cursor:pointer;z-index:10">‹</button>
+        <button onclick="carouselNext()" style="position:absolute;right:0.8rem;top:50%;transform:translateY(-50%);background:rgba(26,26,24,0.7);color:#fff;border:none;width:36px;height:36px;font-size:1.1rem;cursor:pointer;z-index:10">›</button>
+        <div id="carousel-dots" style="position:absolute;bottom:0.8rem;left:50%;transform:translateX(-50%);display:flex;gap:0.4rem"></div>
+      </div>
     </div>
     <div style="max-width:1100px;margin:0 auto;padding:0 3rem 3rem">
       <div class="countdown-card" style="margin-top:1.5rem">
@@ -313,7 +330,14 @@ footer p{font-size:0.73rem;color:var(--muted)}
     <div class="gate-tag">Vérification</div>
     <h1 style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;margin:0.6rem 0">Confirmez votre email</h1>
     <p style="font-size:0.85rem;color:var(--muted);margin-top:0.6rem;line-height:1.7">Un code à 6 chiffres a été envoyé à <strong id="verify-email-display"></strong>. Saisissez-le ci-dessous.</p>
-    <input type="text" id="verify-code-input" maxlength="6" placeholder="000000" style="width:100%;margin-top:2rem;text-align:center;font-size:2rem;letter-spacing:0.4em;padding:1rem;border:0.5px solid var(--border);font-family:'Inter',sans-serif;background:#fff;outline:none">
+    <div id="otp-boxes" style="display:flex;gap:0.6rem;justify-content:center;margin-top:2rem">
+      <input type="text" maxlength="1" class="otp-box" inputmode="numeric" pattern="[0-9]">
+      <input type="text" maxlength="1" class="otp-box" inputmode="numeric" pattern="[0-9]">
+      <input type="text" maxlength="1" class="otp-box" inputmode="numeric" pattern="[0-9]">
+      <input type="text" maxlength="1" class="otp-box" inputmode="numeric" pattern="[0-9]">
+      <input type="text" maxlength="1" class="otp-box" inputmode="numeric" pattern="[0-9]">
+      <input type="text" maxlength="1" class="otp-box" inputmode="numeric" pattern="[0-9]">
+    </div>
     <div class="msg" id="verify-msg" style="margin-top:1rem"></div>
     <button class="btn-primary" style="width:100%;margin-top:1.2rem;padding:1rem" onclick="submitVerifyCode()">Valider mon compte →</button>
     <p style="margin-top:1.2rem;font-size:0.78rem;color:var(--muted)">Pas reçu ? <span style="color:var(--charcoal);cursor:pointer;text-decoration:underline" onclick="resendVerifyCode()">Renvoyer le code</span></p>
@@ -568,7 +592,12 @@ footer p{font-size:0.73rem;color:var(--muted)}
           </div>
           <button class="btn-primary" onclick="saveCompteur()">Appliquer</button>
         </div>
-      </div>
+        <div class="edit-card" style="margin-top:1.2rem">
+          <h4>Photos du carrousel <button class="tbl-btn" onclick="document.getElementById('photo-upload').click()">+ Ajouter</button></h4>
+          <input type="file" id="photo-upload" accept="image/*" multiple style="display:none" onchange="addCarouselPhotos(event)">
+          <div id="photos-admin-list" style="display:flex;flex-wrap:wrap;gap:0.8rem;margin-top:0.8rem"></div>
+          <p style="font-size:0.75rem;color:var(--muted);margin-top:0.8rem">Les photos s'affichent en défilement automatique sur la page d'accueil des membres.</p>
+        </div>
     </main>
   </div>
 </div>
@@ -646,7 +675,7 @@ footer p{font-size:0.73rem;color:var(--muted)}
 // STATE
 // ══════════════════════════════════════
 const DB = {
-  site:{tag:'Ventes privées — Chaque samedi',title:"L'accès exclusif aux grandes marques d'optique",desc:'Chaque samedi, une marque partenaire. Des remises réservées aux membres inscrits. Sur invitation uniquement.',cd:{brand:'Silhouette',discount:"Jusqu'à −40%",label:'Prochaine vente — Samedi 21 juin',places:18,total:40}},
+  site:{tag:'Ventes privées — Chaque samedi',title:"L'accès exclusif aux grandes marques d'optique",desc:'Chaque samedi, une marque partenaire. Des remises réservées aux membres inscrits. Sur invitation uniquement.',cd:{brand:'Silhouette',discount:"Jusqu'à −40%",label:'Prochaine vente — Samedi 21 juin',places:18,total:40},photos:[]},
   ventes:[{id:1,marque:'Silhouette',date:'Samedi 21 juin 2025',remise:'−40%'},{id:2,marque:'Lindberg',date:'Samedi 28 juin 2025',remise:'−35%'},{id:3,marque:'ic! Berlin',date:'Samedi 5 juillet 2025',remise:'−45%'}],
   creneaux:[{heure:'10h00',complet:false},{heure:'10h30',complet:false},{heure:'11h00',complet:false},{heure:'11h30',complet:false},{heure:'12h00',complet:false},{heure:'12h30',complet:false},{heure:'14h30',complet:false},{heure:'15h00',complet:false},{heure:'15h30',complet:false},{heure:'16h00',complet:false},{heure:'16h30',complet:false},{heure:'17h00',complet:false},{heure:'17h30',complet:false},{heure:'18h00',complet:false},{heure:'18h30',complet:false}],
   users:[{id:'u1',prenom:'Marie',nom:'Dupont',email:'marie@test.fr',pwd:'test123',role:'client',tel:'06 11 22 33 44',newsletter:true}],
@@ -669,7 +698,7 @@ function updateNav(role){
   } else if(role==='client'){
     nav.style.display='';
     nav.style.display='';
-    nl.innerHTML=`<a onclick="goHome()">Accueil</a><button class="nav-btn outline" onclick="showPage('rdv');renderRdvPage()">Réserver</button><div class="account-menu-wrap"><button class="nav-btn outline" onclick="toggleAccountMenu()">Mon compte ▾</button><div class="account-dropdown" id="account-dropdown"><div class="account-item" onclick="enterClient()">Mes réservations</div><div class="account-item" onclick="openMonCompte()">Modifier mes infos</div><div class="account-item danger" onclick="logout()">Déconnexion</div></div></div>`;
+    nl.innerHTML=`<a onclick="goHome()">Accueil</a><div class="account-menu-wrap"><button class="nav-btn outline" onclick="toggleAccountMenu()">Mon compte ▾</button><div class="account-dropdown" id="account-dropdown"><div class="account-item" onclick="enterClient()">Mes réservations</div><div class="account-item" onclick="openMonCompte()">Modifier mes infos</div><div class="account-item danger" onclick="logout()">Déconnexion</div></div></div>`;
   } else {
     nav.style.display='';
     nl.innerHTML=`<a onclick="goHome()">Voir le site</a><button class="nav-btn" onclick="enterAdmin()">Admin</button><button class="nav-btn outline" onclick="logout()">Déconnexion</button>`;
@@ -714,6 +743,7 @@ function renderPublic(){
   document.getElementById('hero-member').style.display=isLogged?'block':'none';
   if(isLogged){
     document.getElementById('home-prenom').textContent=currentUser.prenom||'';
+    renderCarousel();
     // Compteur membre
     document.getElementById('cd-brand2').textContent=s.cd.brand;
     document.getElementById('cd-discount2').textContent=s.cd.discount;
@@ -844,17 +874,18 @@ function submitRegisterPage(){
   fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'verification',to:email,prenom,code:verifyCode})}).catch(()=>{});
   // Aller sur la page de vérification
   document.getElementById('verify-email-display').textContent=email;
-  document.getElementById('verify-code-input').value='';
+  document.querySelectorAll('.otp-box').forEach(b=>{b.value='';b.classList.remove('filled');});
   showMsg('verify-msg','','');
   showPage('verify');
+  setTimeout(()=>{const f=document.querySelector('.otp-box');if(f)f.focus();},100);
 }
 
 function submitVerifyCode(){
-  const input=document.getElementById('verify-code-input').value.trim();
+  const boxes=document.querySelectorAll('.otp-box');
+  const input=Array.from(boxes).map(b=>b.value).join('').trim();
   if(!pendingUser)return showMsg('verify-msg','error','Session expirée. Recommencez l\'inscription.');
   if(Date.now()>verifyExpiry)return showMsg('verify-msg','error','Code expiré. Demandez un nouveau code.');
   if(input!==verifyCode)return showMsg('verify-msg','error','Code incorrect. Vérifiez votre email.');
-  // Créer le compte
   const uid='u'+DB.nextId++;
   DB.users.push({id:uid,...pendingUser,role:'client'});
   currentUser=DB.users.find(u=>u.email===pendingUser.email);
@@ -870,6 +901,90 @@ function resendVerifyCode(){
   verifyExpiry=Date.now()+10*60*1000;
   fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'verification',to:pendingUser.email,prenom:pendingUser.prenom,code:verifyCode})}).catch(()=>{});
   showMsg('verify-msg','success','Code renvoyé ! Vérifiez votre boîte mail.');
+}
+
+// OTP BOXES NAVIGATION
+(function initOTP(){
+  function setup(){
+    const boxes=document.querySelectorAll('.otp-box');
+    if(!boxes.length)return;
+    boxes.forEach((box,i)=>{
+      box.addEventListener('input',()=>{
+        box.value=box.value.replace(/[^0-9]/g,'').slice(-1);
+        box.classList.toggle('filled',box.value!=='');
+        if(box.value&&i<boxes.length-1)boxes[i+1].focus();
+      });
+      box.addEventListener('keydown',e=>{
+        if(e.key==='Backspace'&&!box.value&&i>0){boxes[i-1].focus();boxes[i-1].value='';boxes[i-1].classList.remove('filled');}
+        if(e.key==='Enter')submitVerifyCode();
+      });
+      box.addEventListener('paste',e=>{
+        e.preventDefault();
+        const paste=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'');
+        boxes.forEach((b,j)=>{b.value=paste[j]||'';b.classList.toggle('filled',!!b.value);});
+        const last=Math.min(paste.length,boxes.length)-1;
+        if(last>=0)boxes[last].focus();
+      });
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);
+  else setup();
+})();
+
+// ══════════════════════════════════════
+// CARROUSEL
+// ══════════════════════════════════════
+let carouselIndex=0,carouselTimer=null;
+function renderCarousel(){
+  const photos=DB.site.photos||[];
+  const wrap=document.getElementById('home-carousel-wrap');
+  const track=document.getElementById('home-carousel-track');
+  const dots=document.getElementById('carousel-dots');
+  if(!wrap)return;
+  if(!photos.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  track.innerHTML=photos.map(p=>`<img src="${p}" style="min-width:100%;width:100%;height:320px;object-fit:cover;flex-shrink:0" alt="">`).join('');
+  dots.innerHTML=photos.map((_,i)=>`<div class="c-dot${i===0?' active':''}" onclick="goCarousel(${i})"></div>`).join('');
+  carouselIndex=0;track.style.transform='translateX(0)';
+  if(carouselTimer)clearInterval(carouselTimer);
+  if(photos.length>1)carouselTimer=setInterval(carouselNext,4000);
+}
+function goCarousel(n){
+  const photos=DB.site.photos||[];if(!photos.length)return;
+  carouselIndex=(n+photos.length)%photos.length;
+  document.getElementById('home-carousel-track').style.transform=`translateX(-${carouselIndex*100}%)`;
+  document.querySelectorAll('.c-dot').forEach((d,i)=>d.classList.toggle('active',i===carouselIndex));
+}
+function carouselNext(){goCarousel(carouselIndex+1);}
+function carouselPrev(){goCarousel(carouselIndex-1);}
+
+// ══════════════════════════════════════
+// ADMIN PHOTOS
+// ══════════════════════════════════════
+function addCarouselPhotos(e){
+  const files=Array.from(e.target.files);
+  files.forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      DB.site.photos=DB.site.photos||[];
+      DB.site.photos.push(ev.target.result);
+      renderAdminPhotos();renderCarousel();
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value='';
+}
+function renderAdminPhotos(){
+  const list=document.getElementById('photos-admin-list');if(!list)return;
+  const photos=DB.site.photos||[];
+  list.innerHTML=photos.length?photos.map((p,i)=>`
+    <div style="position:relative;width:100px;height:75px;flex-shrink:0">
+      <img src="${p}" style="width:100%;height:100%;object-fit:cover;border:0.5px solid var(--border)">
+      <button onclick="removeCarouselPhoto(${i})" style="position:absolute;top:3px;right:3px;background:rgba(192,57,43,0.85);color:#fff;border:none;width:20px;height:20px;font-size:0.7rem;cursor:pointer">✕</button>
+    </div>`).join(''):'<p style="font-size:0.78rem;color:var(--muted)">Aucune photo ajoutée.</p>';
+}
+function removeCarouselPhoto(i){
+  DB.site.photos.splice(i,1);renderAdminPhotos();renderCarousel();toast('Photo supprimée.');
 }
 
 // ══════════════════════════════════════
@@ -1225,6 +1340,7 @@ function renderContenu(){
   document.getElementById('c-tag').value=s.tag;document.getElementById('c-title').value=s.title;document.getElementById('c-desc').value=s.desc;
   document.getElementById('c-cd-brand').value=s.cd.brand;document.getElementById('c-cd-discount').value=s.cd.discount;
   document.getElementById('c-cd-places').value=s.cd.places;document.getElementById('c-cd-total').value=s.cd.total;document.getElementById('c-cd-label').value=s.cd.label;
+  renderAdminPhotos();
 }
 function saveContenu(){DB.site.tag=document.getElementById('c-tag').value;DB.site.title=document.getElementById('c-title').value;DB.site.desc=document.getElementById('c-desc').value;renderPublic();toast('Contenu mis à jour ✓');}
 function saveCompteur(){DB.site.cd.brand=document.getElementById('c-cd-brand').value;DB.site.cd.discount=document.getElementById('c-cd-discount').value;DB.site.cd.places=parseInt(document.getElementById('c-cd-places').value)||0;DB.site.cd.total=parseInt(document.getElementById('c-cd-total').value)||40;DB.site.cd.label=document.getElementById('c-cd-label').value;renderPublic();toast('Compteur mis à jour ✓');}
