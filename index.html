@@ -266,11 +266,13 @@ footer p{font-size:0.73rem;color:var(--muted)}
       <p style="font-size:0.88rem;color:var(--muted);margin-bottom:2rem">Réservez votre créneau avant que les places ne soient prises.</p>
       <div id="home-events"></div>
       <!-- CARROUSEL PHOTOS -->
-      <div id="home-carousel-wrap" style="display:none;margin-top:2rem;position:relative;overflow:hidden;border:0.5px solid var(--border)">
-        <div id="home-carousel-track" style="display:flex;transition:transform 0.5s ease"></div>
-        <button onclick="carouselPrev()" style="position:absolute;left:0.8rem;top:50%;transform:translateY(-50%);background:rgba(26,26,24,0.7);color:#fff;border:none;width:36px;height:36px;font-size:1.1rem;cursor:pointer;z-index:10">‹</button>
-        <button onclick="carouselNext()" style="position:absolute;right:0.8rem;top:50%;transform:translateY(-50%);background:rgba(26,26,24,0.7);color:#fff;border:none;width:36px;height:36px;font-size:1.1rem;cursor:pointer;z-index:10">›</button>
-        <div id="carousel-dots" style="position:absolute;bottom:0.8rem;left:50%;transform:translateX(-50%);display:flex;gap:0.4rem"></div>
+      <div id="home-carousel-wrap" style="display:none;margin-top:2rem;position:relative;overflow:hidden;border:0.5px solid var(--border);border-radius:2px">
+        <div style="position:relative;width:100%;padding-top:56.25%">
+          <div id="home-carousel-track" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;transition:transform 0.5s ease"></div>
+          <button onclick="carouselPrev()" style="position:absolute;left:0.8rem;top:50%;transform:translateY(-50%);background:rgba(26,26,24,0.7);color:#fff;border:none;width:36px;height:36px;font-size:1.1rem;cursor:pointer;z-index:10">‹</button>
+          <button onclick="carouselNext()" style="position:absolute;right:0.8rem;top:50%;transform:translateY(-50%);background:rgba(26,26,24,0.7);color:#fff;border:none;width:36px;height:36px;font-size:1.1rem;cursor:pointer;z-index:10">›</button>
+          <div id="carousel-dots" style="position:absolute;bottom:0.8rem;left:50%;transform:translateX(-50%);display:flex;gap:0.4rem;z-index:10"></div>
+        </div>
       </div>
     </div>
     <div style="max-width:1100px;margin:0 auto;padding:0 3rem 3rem">
@@ -520,10 +522,15 @@ footer p{font-size:0.73rem;color:var(--muted)}
         <h2>Vue d'ensemble</h2>
         <div class="stats-grid">
           <div class="stat-card"><div class="s-label">Membres inscrits</div><div class="s-num" id="stat-membres">0</div></div>
-          <div class="stat-card"><div class="s-label">Réservations actives</div><div class="s-num" id="stat-resas">0</div></div>
+          <div class="stat-card"><div class="s-label">Réservations confirmées</div><div class="s-num" id="stat-resas">0</div></div>
           <div class="stat-card"><div class="s-label">Ventes programmées</div><div class="s-num" id="stat-ventes">0</div></div>
         </div>
-        <h2 style="font-size:1.2rem;margin-bottom:1rem">Dernières inscriptions</h2>
+        <div class="stats-grid" id="stats-extra" style="margin-top:-0.5rem"></div>
+        <div class="edit-card" style="margin-bottom:1.5rem">
+          <h4>Occupation par vente</h4>
+          <div id="ventes-stats"></div>
+        </div>
+        <h2 style="font-size:1.2rem;margin-bottom:1rem">Dernières réservations</h2>
         <table class="admin-table"><thead><tr><th>Nom</th><th>Email</th><th>Marque</th><th>Créneau</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="dash-tbody"></tbody></table>
       </div>
       <!-- VISITEURS -->
@@ -862,8 +869,16 @@ function renderPublic(){
   document.getElementById('cd-brand').textContent=s.cd.brand;
   document.getElementById('cd-discount').textContent=s.cd.discount;
   document.getElementById('cd-label').textContent=s.cd.label;
-  document.getElementById('cd-places').textContent=s.cd.places+' places restantes';
-  document.getElementById('cd-total').textContent=s.cd.total;
+  // Compteur réel : calculer depuis les réservations
+  const venteActive=DB.ventes.find(v=>v.marque===s.cd.brand)||DB.ventes[0];
+  if(venteActive){
+    const p=getPlacesReelles(venteActive.id);
+    document.getElementById('cd-places').textContent=p.restantes+' places restantes';
+    document.getElementById('cd-total').textContent=p.total;
+  } else {
+    document.getElementById('cd-places').textContent=s.cd.places+' places restantes';
+    document.getElementById('cd-total').textContent=s.cd.total;
+  }
   // Toggle vues
   const isLogged=currentUser&&currentUser.role==='client';
   document.getElementById('hero-guest').style.display=isLogged?'none':'';
@@ -875,8 +890,15 @@ function renderPublic(){
     document.getElementById('cd-brand2').textContent=s.cd.brand;
     document.getElementById('cd-discount2').textContent=s.cd.discount;
     document.getElementById('cd-label2').textContent=s.cd.label;
-    document.getElementById('cd-places2').textContent=s.cd.places+' places restantes';
-    document.getElementById('cd-total2').textContent=s.cd.total;
+    const venteActive2=DB.ventes.find(v=>v.marque===s.cd.brand)||DB.ventes[0];
+    if(venteActive2){
+      const p2=getPlacesReelles(venteActive2.id);
+      document.getElementById('cd-places2').textContent=p2.restantes+' places restantes';
+      document.getElementById('cd-total2').textContent=p2.total;
+    } else {
+      document.getElementById('cd-places2').textContent=s.cd.places+' places restantes';
+      document.getElementById('cd-total2').textContent=s.cd.total;
+    }
     // Événements
     document.getElementById('home-events').innerHTML=DB.ventes.map(v=>{
       const deja=DB.reservations.find(r=>r.userId===currentUser.id&&r.date===v.date&&r.status==='confirmed');
@@ -1112,7 +1134,7 @@ function renderCarousel(){
   if(!wrap)return;
   if(!photos.length){wrap.style.display='none';return;}
   wrap.style.display='block';
-  track.innerHTML=photos.map(p=>`<img src="${p}" style="min-width:100%;width:100%;height:320px;object-fit:cover;flex-shrink:0" alt="">`).join('');
+  track.innerHTML=photos.map(p=>`<div style="min-width:100%;height:100%;flex-shrink:0;background:#000"><img src="${p}" style="width:100%;height:100%;object-fit:cover;display:block" alt=""></div>`).join('');
   dots.innerHTML=photos.map((_,i)=>`<div class="c-dot${i===0?' active':''}" onclick="goCarousel(${i})"></div>`).join('');
   carouselIndex=0;track.style.transform='translateX(0)';
   if(carouselTimer)clearInterval(carouselTimer);
@@ -1391,20 +1413,68 @@ function showAdminPanel(name,el){
   if(name==='contenu')renderContenu();
 }
 
+function getPlacesReelles(venteId){
+  // Calcule les places restantes pour une vente donnée
+  const v=DB.ventes.find(x=>String(x.id)===String(venteId));
+  if(!v)return{restantes:0,total:DB.creneaux.length};
+  const total=DB.creneaux.length;
+  const prises=DB.reservations.filter(r=>r.marque===v.marque&&r.date===v.date&&r.status==='confirmed').length;
+  return{restantes:Math.max(0,total-prises),total};
+}
+
 function renderDashboard(){
-  document.getElementById('stat-membres').textContent=DB.users.filter(u=>u.role==='client').length;
-  document.getElementById('stat-resas').textContent=DB.reservations.filter(r=>r.status==='confirmed').length;
+  const clients=DB.users.filter(u=>u.role==='client');
+  const resasConfirmed=DB.reservations.filter(r=>r.status==='confirmed');
+  const resasPending=DB.reservations.filter(r=>r.status==='pending');
+  const resasCancelled=DB.reservations.filter(r=>r.status==='cancelled');
+
+  // Stats principales
+  document.getElementById('stat-membres').textContent=clients.length;
+  document.getElementById('stat-resas').textContent=resasConfirmed.length;
   document.getElementById('stat-ventes').textContent=DB.ventes.length;
+
+  // Stats secondaires
+  const statsExtra=document.getElementById('stats-extra');
+  if(statsExtra){
+    const tauxOccupation=DB.creneaux.length>0?Math.round(resasConfirmed.length/DB.creneaux.length*100):0;
+    const newsletter=clients.filter(u=>u.newsletter).length;
+    statsExtra.innerHTML=`
+      <div class="stat-card"><div class="s-label">En attente</div><div class="s-num" style="font-size:1.5rem;color:var(--gold)">${resasPending}</div></div>
+      <div class="stat-card"><div class="s-label">Annulées</div><div class="s-num" style="font-size:1.5rem;color:var(--danger)">${resasCancelled}</div></div>
+      <div class="stat-card"><div class="s-label">Newsletter</div><div class="s-num" style="font-size:1.5rem">${newsletter}</div></div>
+    `;
+  }
+
+  // Répartition par vente
+  const ventesStats=document.getElementById('ventes-stats');
+  if(ventesStats){
+    ventesStats.innerHTML=DB.ventes.map(v=>{
+      const p=getPlacesReelles(v.id);
+      const pct=p.total>0?Math.round((p.total-p.restantes)/p.total*100):0;
+      return`<div style="margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:0.3rem">
+          <span><strong>${v.marque}</strong> — ${v.date}</span>
+          <span style="color:var(--muted)">${p.total-p.restantes}/${p.total} places</span>
+        </div>
+        <div style="background:var(--border);height:6px;border-radius:3px">
+          <div style="background:var(--charcoal);height:6px;border-radius:3px;width:${pct}%;transition:width 0.3s"></div>
+        </div>
+      </div>`;
+    }).join('')||'<p style="color:var(--muted);font-size:0.82rem">Aucune vente programmée.</p>';
+  }
+
+  // Dernières réservations
   const resas=DB.reservations.slice(-8).reverse();
   document.getElementById('dash-tbody').innerHTML=resas.map(r=>`
     <tr>
       <td>${r.prenom} ${r.nom}</td><td>${r.email}</td><td>${r.marque}</td><td>${r.creneau}</td>
-      <td><span class="resa-badge ${r.status}" style="font-size:0.65rem">${r.status==='confirmed'?'Confirmée':'Annulée'}</span></td>
+      <td><span class="resa-badge ${r.status}" style="font-size:0.65rem">${r.status==='confirmed'?'Confirmée':r.status==='pending'?'En attente':'Annulée'}</span></td>
       <td>
         ${r.status==='confirmed'?`<button class="tbl-btn danger" onclick="adminCancelResa('${r.id}')">Annuler</button>`
+          :r.status==='pending'?`<button class="tbl-btn success" onclick="adminConfirmResa('${r.id}')">Accepter</button>`
           :`<button class="tbl-btn success" onclick="adminConfirmResa('${r.id}')">Réactiver</button>`}
       </td>
-    </tr>`).join('')||'<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:1.5rem">Aucune inscription</td></tr>';
+    </tr>`).join('')||'<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:1.5rem">Aucune réservation</td></tr>';
 }
 
 function adminCancelResa(id){
