@@ -237,7 +237,6 @@ footer p{font-size:0.73rem;color:var(--muted)}
 
 <!-- PAGE PUBLIC -->
 <div class="page active" id="page-public">
-  <!-- VUE NON CONNECTÉ -->
   <section class="hero" id="hero-guest">
     <div>
       <div class="hero-tag" id="hero-tag">Ventes privées — Chaque samedi</div>
@@ -670,6 +669,104 @@ footer p{font-size:0.73rem;color:var(--muted)}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, addDoc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBOc8Ye1ZzkXeb5i_mcrXIbzlKZJzRcn-Y",
+  authDomain: "blinkselect.firebaseapp.com",
+  projectId: "blinkselect",
+  storageBucket: "blinkselect.firebasestorage.app",
+  messagingSenderId: "421124986107",
+  appId: "1:421124986107:web:72cd597e6eb07bee6b0c5e"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+window._db = db;
+window._firebase = { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, addDoc, query, orderBy };
+
+// ── INIT : charger toutes les données depuis Firestore ──
+async function loadFromFirestore() {
+  const F = window._firebase;
+  try {
+    // SITE
+    const siteSnap = await F.getDoc(F.doc(db, 'config', 'site'));
+    if (siteSnap.exists()) Object.assign(DB.site, siteSnap.data());
+
+    // VENTES
+    const ventesSnap = await F.getDocs(F.collection(db, 'ventes'));
+    if (!ventesSnap.empty) {
+      DB.ventes = ventesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } else {
+      // Initialiser avec les données par défaut
+      for (const v of DB.ventes) {
+        await F.setDoc(F.doc(db, 'ventes', String(v.id)), { marque: v.marque, date: v.date, remise: v.remise });
+      }
+    }
+
+    // CRENEAUX
+    const creneauxSnap = await F.getDoc(F.doc(db, 'config', 'creneaux'));
+    if (creneauxSnap.exists()) DB.creneaux = creneauxSnap.data().list;
+
+    // USERS
+    const usersSnap = await F.getDocs(F.collection(db, 'users'));
+    if (!usersSnap.empty) DB.users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // RESERVATIONS
+    const resasSnap = await F.getDocs(F.collection(db, 'reservations'));
+    if (!resasSnap.empty) DB.reservations = resasSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  } catch(e) { console.warn('Firebase load error:', e); }
+
+  renderPublic();
+  document.getElementById('app-loader')?.remove();
+}
+
+window._saveUser = async (user) => {
+  const F = window._firebase;
+  const { id, ...data } = user;
+  await F.setDoc(F.doc(db, 'users', id), data);
+};
+window._deleteUser = async (id) => {
+  const F = window._firebase;
+  await F.deleteDoc(F.doc(db, 'users', id));
+};
+window._saveResa = async (resa) => {
+  const F = window._firebase;
+  const { id, ...data } = resa;
+  await F.setDoc(F.doc(db, 'reservations', id), data);
+};
+window._updateResa = async (id, data) => {
+  const F = window._firebase;
+  await F.updateDoc(F.doc(db, 'reservations', id), data);
+};
+window._deleteResa = async (id) => {
+  const F = window._firebase;
+  await F.deleteDoc(F.doc(db, 'reservations', id));
+};
+window._saveVente = async (vente) => {
+  const F = window._firebase;
+  const { id, ...data } = vente;
+  await F.setDoc(F.doc(db, 'ventes', String(id)), data);
+};
+window._deleteVente = async (id) => {
+  const F = window._firebase;
+  await F.deleteDoc(F.doc(db, 'ventes', String(id)));
+};
+window._saveCreneaux = async (list) => {
+  const F = window._firebase;
+  await F.setDoc(F.doc(db, 'config', 'creneaux'), { list });
+};
+window._saveSite = async (siteData) => {
+  const F = window._firebase;
+  await F.setDoc(F.doc(db, 'config', 'site'), siteData, { merge: true });
+};
+
+loadFromFirestore();
+</script>
 <script>
 // ══════════════════════════════════════
 // STATE
@@ -849,30 +946,48 @@ function logout(){
 let pendingUser=null;
 let verifyCode=null;
 let verifyExpiry=null;
+let lastVerifySent=0; // cooldown 30s
+
+function validateEmail(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+function validateTel(tel){
+  if(!tel)return true; // optionnel
+  const clean=tel.replace(/[\s.\-()]/g,'');
+  return /^(\+33|0033|0)[1-9][0-9]{8}$/.test(clean);
+}
+function formatTel(tel){
+  const clean=tel.replace(/[\s.\-()]/g,'');
+  const n=clean.startsWith('+33')?'0'+clean.slice(3):clean.startsWith('0033')?'0'+clean.slice(4):clean;
+  return n.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
+}
 
 function submitRegisterPage(){
   const prenom=document.getElementById('r2-prenom').value.trim();
   const nom=document.getElementById('r2-nom').value.trim();
-  const email=document.getElementById('r2-email').value.trim();
-  const email2=document.getElementById('r2-email2').value.trim();
+  const email=document.getElementById('r2-email').value.trim().toLowerCase();
+  const email2=document.getElementById('r2-email2').value.trim().toLowerCase();
   const tel=document.getElementById('r2-tel').value.trim();
   const pwd=document.getElementById('r2-pwd').value;
   const pwd2=document.getElementById('r2-pwd2').value;
   if(!prenom||!nom||!email||!pwd)return showMsg('r2-msg','error','Merci de remplir tous les champs obligatoires.');
+  if(!validateEmail(email))return showMsg('r2-msg','error','Adresse email invalide (ex: nom@domaine.fr).');
   if(email!==email2)return showMsg('r2-msg','error','Les adresses email ne correspondent pas.');
   if(pwd.length<6)return showMsg('r2-msg','error','Le mot de passe doit contenir au moins 6 caractères.');
   if(pwd!==pwd2)return showMsg('r2-msg','error','Les mots de passe ne correspondent pas.');
   if(!document.getElementById('r2-cgv').checked)return showMsg('r2-msg','error','Vous devez accepter les CGV.');
+  if(tel&&!validateTel(tel))return showMsg('r2-msg','error','Numéro de téléphone invalide (format français requis, ex: 06 12 34 56 78).');
   if(DB.users.find(u=>u.email===email))return showMsg('r2-msg','error','Cette adresse email est déjà utilisée.');
-  if(tel&&DB.users.find(u=>u.tel&&u.tel.replace(/ /g,'')===tel.replace(/ /g,'')))return showMsg('r2-msg','error','Ce numéro de téléphone est déjà utilisé.');
-  const newsletter=document.getElementById('r2-mail').checked;
-  // Stocker en attente de vérification
-  pendingUser={prenom,nom,email,pwd,tel,newsletter};
+  const telFormatted=tel?formatTel(tel):'';
+  if(telFormatted&&DB.users.find(u=>u.tel&&u.tel.replace(/ /g,'')===telFormatted.replace(/ /g,'')))return showMsg('r2-msg','error','Ce numéro de téléphone est déjà utilisé.');
+  // Cooldown 30s
+  const now=Date.now();
+  if(now-lastVerifySent<30000)return showMsg('r2-msg','error','Veuillez patienter '+(Math.ceil((30000-(now-lastVerifySent))/1000))+' secondes avant de renvoyer un code.');
+  lastVerifySent=now;
+  pendingUser={prenom,nom,email,pwd,tel:telFormatted,newsletter:document.getElementById('r2-mail').checked};
   verifyCode=String(Math.floor(100000+Math.random()*900000));
   verifyExpiry=Date.now()+10*60*1000;
-  // Envoyer le code par mail
   fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'verification',to:email,prenom,code:verifyCode})}).catch(()=>{});
-  // Aller sur la page de vérification
   document.getElementById('verify-email-display').textContent=email;
   document.querySelectorAll('.otp-box').forEach(b=>{b.value='';b.classList.remove('filled');});
   showMsg('verify-msg','','');
@@ -886,9 +1001,11 @@ function submitVerifyCode(){
   if(!pendingUser)return showMsg('verify-msg','error','Session expirée. Recommencez l\'inscription.');
   if(Date.now()>verifyExpiry)return showMsg('verify-msg','error','Code expiré. Demandez un nouveau code.');
   if(input!==verifyCode)return showMsg('verify-msg','error','Code incorrect. Vérifiez votre email.');
-  const uid='u'+DB.nextId++;
-  DB.users.push({id:uid,...pendingUser,role:'client'});
-  currentUser=DB.users.find(u=>u.email===pendingUser.email);
+  const uid='u'+Date.now();
+  const newUser={id:uid,...pendingUser,role:'client'};
+  DB.users.push(newUser);
+  if(window._saveUser)window._saveUser(newUser);
+  currentUser=newUser;
   fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'inscription',to:pendingUser.email,prenom:pendingUser.prenom})}).catch(()=>{});
   pendingUser=null;verifyCode=null;verifyExpiry=null;
   updateNav('client');
@@ -897,6 +1014,9 @@ function submitVerifyCode(){
 
 function resendVerifyCode(){
   if(!pendingUser)return;
+  const now=Date.now();
+  if(now-lastVerifySent<30000)return showMsg('verify-msg','error','Veuillez patienter '+(Math.ceil((30000-(now-lastVerifySent))/1000))+' secondes avant de renvoyer un code.');
+  lastVerifySent=now;
   verifyCode=String(Math.floor(100000+Math.random()*900000));
   verifyExpiry=Date.now()+10*60*1000;
   fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'verification',to:pendingUser.email,prenom:pendingUser.prenom,code:verifyCode})}).catch(()=>{});
@@ -968,6 +1088,7 @@ function addCarouselPhotos(e){
     reader.onload=ev=>{
       DB.site.photos=DB.site.photos||[];
       DB.site.photos.push(ev.target.result);
+      if(window._saveSite)window._saveSite({photos:DB.site.photos});
       renderAdminPhotos();renderCarousel();
     };
     reader.readAsDataURL(file);
@@ -984,7 +1105,9 @@ function renderAdminPhotos(){
     </div>`).join(''):'<p style="font-size:0.78rem;color:var(--muted)">Aucune photo ajoutée.</p>';
 }
 function removeCarouselPhoto(i){
-  DB.site.photos.splice(i,1);renderAdminPhotos();renderCarousel();toast('Photo supprimée.');
+  DB.site.photos.splice(i,1);
+  if(window._saveSite)window._saveSite({photos:DB.site.photos});
+  renderAdminPhotos();renderCarousel();toast('Photo supprimée.');
 }
 
 // ══════════════════════════════════════
@@ -1057,18 +1180,15 @@ function submitRdv(){
   const v=DB.ventes.find(x=>String(x.id)===String(selectedVenteId));
   if(DB.reservations.find(r=>r.userId===currentUser.id&&r.date===v.date&&r.status==='confirmed'))
     return showMsg('rdv-msg','error','Vous avez déjà une réservation ce samedi.');
-  const rid='r'+DB.nextId++;
+  const rid='r'+Date.now();
   const resa={id:rid,userId:currentUser.id,prenom:currentUser.prenom,nom:currentUser.nom||'',email:currentUser.email,marque:v.marque,creneau:selectedCreneau.heure,date:v.date,status:'pending'};
   DB.reservations.push(resa);
+  if(window._saveResa)window._saveResa(resa);
   lastConfirm=resa;
   selectedVenteId=null;selectedCreneau=null;
-  // Mail pending
   fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'pending',to:resa.email,prenom:resa.prenom,marque:resa.marque,date:resa.date,creneau:resa.creneau,ref:'BLNK-'+rid.slice(-6).toUpperCase()})}).catch(()=>{});
   showPage('confirm');
   renderPendingConfirm(resa);
-  // Simulation : passage en confirmé après 15-25 sec (en prod = email Brevo après 10-30 min)
-  const delay=Math.floor(Math.random()*(25000-15000)+15000);
-  setTimeout(()=>acceptResa(rid),delay);
 }
 
 function renderPendingConfirm(resa){
@@ -1086,10 +1206,9 @@ function acceptResa(rid){
   if(!r)return;
   r.status='confirmed';
   markCreneauComplet(r.creneau);
+  if(window._updateResa)window._updateResa(rid,{status:'confirmed'});
   lastConfirm=r;
-  // Mail confirmation
   fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'confirmed',to:r.email,prenom:r.prenom,marque:r.marque,date:r.date,creneau:r.creneau,ref:'BLNK-'+rid.slice(-6).toUpperCase()})}).catch(()=>{});
-  // Si on est encore sur la page confirm, passer à la vue acceptée
   if(document.getElementById('page-confirm').classList.contains('active')){
     document.getElementById('confirm-pending').style.display='none';
     document.getElementById('confirm-accepted').style.display='block';
@@ -1098,7 +1217,6 @@ function acceptResa(rid){
     document.getElementById('cfp-creneau2').textContent=r.creneau;
     document.getElementById('cfp-ref2').textContent='BLNK-'+rid.slice(-6).toUpperCase();
   }
-  // Notif toast
   toast('🎉 Votre réservation a été confirmée !');
 }
 
@@ -1138,12 +1256,7 @@ function enterClient(){
 function cancelResa(id){
   if(!confirm('Annuler cette réservation ?'))return;
   const r=DB.reservations.find(x=>x.id===id);
-  if(r){
-    r.status='cancelled';
-    // Libérer le créneau
-    const c=DB.creneaux.find(x=>x.heure===r.creneau);
-    if(c)c.complet=false;
-  }
+  if(r){r.status='cancelled';const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c)c.complet=false;if(window._updateResa)window._updateResa(id,{status:'cancelled'});}
   enterClient();toast('Réservation annulée.');
 }
 
@@ -1172,20 +1285,25 @@ function saveMonCompte(){
   const pwd2=document.getElementById('mc-pwd2').value;
   const errEl=document.getElementById('mc-err');errEl.style.display='none';
   if(!prenom||!nom){errEl.textContent='Prénom et nom requis.';errEl.style.display='block';return;}
+  if(tel&&!validateTel(tel)){errEl.textContent='Numéro de téléphone invalide (format français, ex: 06 12 34 56 78).';errEl.style.display='block';return;}
   if(pwd&&pwd.length<6){errEl.textContent='Mot de passe trop court (6 car. min).';errEl.style.display='block';return;}
   if(pwd&&pwd!==pwd2){errEl.textContent='Les mots de passe ne correspondent pas.';errEl.style.display='block';return;}
-  if(tel&&DB.users.find(u=>u.id!==currentUser.id&&u.tel&&u.tel.replace(/ /g,'')===tel.replace(/ /g,''))){errEl.textContent='Ce numéro est déjà utilisé.';errEl.style.display='block';return;}
+  const telFormatted=tel?formatTel(tel):'';
+  if(telFormatted&&DB.users.find(u=>u.id!==currentUser.id&&u.tel&&u.tel.replace(/ /g,'')===telFormatted.replace(/ /g,''))){errEl.textContent='Ce numéro est déjà utilisé.';errEl.style.display='block';return;}
   const u=DB.users.find(u=>u.id===currentUser.id);
-  if(u){u.prenom=prenom;u.nom=nom;u.tel=tel;if(pwd)u.pwd=pwd;}
-  currentUser.prenom=prenom;currentUser.nom=nom;currentUser.tel=tel;
+  if(u){u.prenom=prenom;u.nom=nom;u.tel=telFormatted;if(pwd)u.pwd=pwd;if(window._saveUser)window._saveUser(u);}
+  currentUser.prenom=prenom;currentUser.nom=nom;currentUser.tel=telFormatted;
   document.getElementById('mc-ok').style.display='block';
   document.getElementById('client-name').textContent=prenom;
 }
 
 function confirmDeleteAccount(){
   if(!confirm('Supprimer définitivement votre compte et toutes vos réservations ?'))return;
-  DB.users=DB.users.filter(u=>u.id!==currentUser.id);
-  DB.reservations=DB.reservations.filter(r=>r.userId!==currentUser.id);
+  const uid=currentUser.id;
+  DB.reservations.filter(r=>r.userId===uid).forEach(r=>{if(window._deleteResa)window._deleteResa(r.id);});
+  DB.users=DB.users.filter(u=>u.id!==uid);
+  DB.reservations=DB.reservations.filter(r=>r.userId!==uid);
+  if(window._deleteUser)window._deleteUser(uid);
   document.getElementById('overlay-compte').classList.remove('active');
   logout();toast('Compte supprimé.');
 }
@@ -1254,10 +1372,11 @@ function saveVente(id){
   v.marque=document.getElementById('v-marque-'+id).value;
   v.remise=document.getElementById('v-remise-'+id).value;
   v.date=document.getElementById('v-date-'+id).value;
+  if(window._saveVente)window._saveVente(v);
   renderVentes();renderPublic();toast('Vente mise à jour ✓');
 }
-function deleteVente(id){if(!confirm('Supprimer cette vente ?'))return;DB.ventes=DB.ventes.filter(v=>v.id!==id);renderVentes();renderPublic();}
-function addVente(){const id=DB.nextId++;DB.ventes.push({id,marque:'Nouvelle marque',date:'Samedi —',remise:'−30%'});renderVentes();}
+function deleteVente(id){if(!confirm('Supprimer cette vente ?'))return;DB.ventes=DB.ventes.filter(v=>v.id!==id);if(window._deleteVente)window._deleteVente(id);renderVentes();renderPublic();}
+function addVente(){const id='v'+Date.now();DB.ventes.push({id,marque:'Nouvelle marque',date:'Samedi —',remise:'−30%'});renderVentes();}
 
 function renderCreneauxAdmin(){
   document.getElementById('creneaux-admin').innerHTML=DB.creneaux.map((c,i)=>`
@@ -1267,7 +1386,7 @@ function renderCreneauxAdmin(){
       <button class="tbl-btn danger" onclick="deleteCreneau(${i})">✕</button>
     </div>`).join('');
 }
-function saveCreneaux(){DB.creneaux=DB.creneaux.map((_,i)=>({heure:document.getElementById('cr-h-'+i).value,complet:document.getElementById('cr-c-'+i).checked}));renderPublic();toast('Créneaux enregistrés ✓');}
+function saveCreneaux(){DB.creneaux=DB.creneaux.map((_,i)=>({heure:document.getElementById('cr-h-'+i).value,complet:document.getElementById('cr-c-'+i).checked}));if(window._saveCreneaux)window._saveCreneaux(DB.creneaux);renderPublic();toast('Créneaux enregistrés ✓');}
 function addCreneau(){DB.creneaux.push({heure:'19h00',complet:false});renderCreneauxAdmin();}
 function deleteCreneau(i){DB.creneaux.splice(i,1);renderCreneauxAdmin();}
 
@@ -1289,8 +1408,10 @@ function filterInscrits(){
 
 function deleteUser(id){
   if(!confirm('Supprimer cet inscrit ?'))return;
+  DB.reservations.filter(r=>r.userId===id).forEach(r=>{if(window._deleteResa)window._deleteResa(r.id);});
   DB.users=DB.users.filter(u=>u.id!==id);
   DB.reservations=DB.reservations.filter(r=>r.userId!==id);
+  if(window._deleteUser)window._deleteUser(id);
   renderInscrits();renderDashboard();toast('Inscrit supprimé.');
 }
 
@@ -1323,17 +1444,18 @@ function filterResas(){
   const q=document.getElementById('search-resas').value.toLowerCase();
   document.querySelectorAll('#resas-tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';});
 }
-function adminCancelResaPanel(id){const r=DB.reservations.find(x=>x.id===id);if(r){r.status='cancelled';const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c)c.complet=false;}renderReservations();renderDashboard();toast('Annulée.');}
+function adminCancelResaPanel(id){const r=DB.reservations.find(x=>x.id===id);if(r){r.status='cancelled';const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c)c.complet=false;if(window._updateResa)window._updateResa(id,{status:'cancelled'});}renderReservations();renderDashboard();toast('Annulée.');}
 function adminConfirmResaPanel(id){
   const r=DB.reservations.find(x=>x.id===id);
   if(r){
     r.status='confirmed';
     markCreneauComplet(r.creneau);
+    if(window._updateResa)window._updateResa(id,{status:'confirmed'});
     fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'confirmed',to:r.email,prenom:r.prenom,marque:r.marque,date:r.date,creneau:r.creneau,ref:'BLNK-'+id.slice(-6).toUpperCase()})}).catch(()=>{});
   }
   renderReservations();renderDashboard();toast('Confirmée — mail envoyé ✓');
 }
-function adminDeleteResa(id){if(!confirm('Supprimer définitivement ?'))return;const r=DB.reservations.find(x=>x.id===id);if(r){const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c&&r.status==='confirmed')c.complet=false;}DB.reservations=DB.reservations.filter(x=>x.id!==id);renderReservations();renderDashboard();toast('Supprimée.');}
+function adminDeleteResa(id){if(!confirm('Supprimer définitivement ?'))return;const r=DB.reservations.find(x=>x.id===id);if(r){const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c&&r.status==='confirmed')c.complet=false;}DB.reservations=DB.reservations.filter(x=>x.id!==id);if(window._deleteResa)window._deleteResa(id);renderReservations();renderDashboard();toast('Supprimée.');}
 
 function renderContenu(){
   const s=DB.site;
@@ -1342,8 +1464,8 @@ function renderContenu(){
   document.getElementById('c-cd-places').value=s.cd.places;document.getElementById('c-cd-total').value=s.cd.total;document.getElementById('c-cd-label').value=s.cd.label;
   renderAdminPhotos();
 }
-function saveContenu(){DB.site.tag=document.getElementById('c-tag').value;DB.site.title=document.getElementById('c-title').value;DB.site.desc=document.getElementById('c-desc').value;renderPublic();toast('Contenu mis à jour ✓');}
-function saveCompteur(){DB.site.cd.brand=document.getElementById('c-cd-brand').value;DB.site.cd.discount=document.getElementById('c-cd-discount').value;DB.site.cd.places=parseInt(document.getElementById('c-cd-places').value)||0;DB.site.cd.total=parseInt(document.getElementById('c-cd-total').value)||40;DB.site.cd.label=document.getElementById('c-cd-label').value;renderPublic();toast('Compteur mis à jour ✓');}
+function saveContenu(){DB.site.tag=document.getElementById('c-tag').value;DB.site.title=document.getElementById('c-title').value;DB.site.desc=document.getElementById('c-desc').value;if(window._saveSite)window._saveSite({tag:DB.site.tag,title:DB.site.title,desc:DB.site.desc});renderPublic();toast('Contenu mis à jour ✓');}
+function saveCompteur(){DB.site.cd.brand=document.getElementById('c-cd-brand').value;DB.site.cd.discount=document.getElementById('c-cd-discount').value;DB.site.cd.places=parseInt(document.getElementById('c-cd-places').value)||0;DB.site.cd.total=parseInt(document.getElementById('c-cd-total').value)||40;DB.site.cd.label=document.getElementById('c-cd-label').value;if(window._saveSite)window._saveSite({cd:DB.site.cd});renderPublic();toast('Compteur mis à jour ✓');}
 
 // ══════════════════════════════════════
 // CRENEAUX
