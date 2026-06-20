@@ -212,6 +212,8 @@ module.exports = async (req, res) => {
 </div>
 </body></html>`;
   } else {
+    return res.status(400).json({ error: 'Type inconnu' });
+  }
 
   const payload = JSON.stringify({
     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
