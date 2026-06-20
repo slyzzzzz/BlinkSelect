@@ -181,7 +181,13 @@ footer p{font-size:0.73rem;color:var(--muted)}
 .otp-box{width:48px;height:58px;text-align:center;font-size:1.6rem;font-family:'Playfair Display',serif;border:0.5px solid var(--border);background:#fff;outline:none;color:var(--charcoal);transition:border-color 0.15s}
 .otp-box:focus{border-color:var(--charcoal)}
 .otp-box.filled{border-color:var(--charcoal);background:var(--ivory)}
-/* CAROUSEL DOT */
+/* TOGGLE SWITCH */
+.toggle-switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--border);transition:.3s;border-radius:24px}
+.toggle-slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;transition:.3s;border-radius:50%}
+.toggle-switch input:checked+.toggle-slider{background:var(--charcoal)}
+.toggle-switch input:checked+.toggle-slider:before{transform:translateX(20px)}
 .c-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.5);cursor:pointer;transition:background 0.2s}
 .c-dot.active{background:#fff}
 @media(max-width:720px){
@@ -604,6 +610,19 @@ footer p{font-size:0.73rem;color:var(--muted)}
           <div id="photos-admin-list" style="display:flex;flex-wrap:wrap;gap:0.8rem;margin-top:0.8rem"></div>
           <p style="font-size:0.75rem;color:var(--muted);margin-top:0.8rem">Les photos s'affichent en défilement automatique sur la page d'accueil des membres.</p>
         </div>
+        <div class="edit-card" style="margin-top:1.2rem">
+          <h4>Gestion des réservations</h4>
+          <div style="display:flex;align-items:center;gap:1rem;padding:0.8rem 0">
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-auto-accept" onchange="saveAutoAccept()">
+              <span class="toggle-slider"></span>
+            </label>
+            <div>
+              <div style="font-size:0.85rem;font-weight:500;color:var(--charcoal)" id="auto-accept-label">Acceptation manuelle</div>
+              <div style="font-size:0.75rem;color:var(--muted)">Vous recevez un mail pour chaque demande et vous acceptez depuis le panel</div>
+            </div>
+          </div>
+        </div>
     </main>
   </div>
 </div>
@@ -809,7 +828,7 @@ loadFromFirestore();
 // STATE
 // ══════════════════════════════════════
 const DB = {
-  site:{tag:'Ventes privées — Chaque samedi',title:"L'accès exclusif aux grandes marques d'optique",desc:'Chaque samedi, une marque partenaire. Des remises réservées aux membres inscrits. Sur invitation uniquement.',cd:{brand:'Silhouette',discount:"Jusqu'à −40%",label:'Prochaine vente — Samedi 21 juin',places:18,total:40},photos:[]},
+  site:{tag:'Ventes privées — Chaque samedi',title:"L'accès exclusif aux grandes marques d'optique",desc:'Chaque samedi, une marque partenaire. Des remises réservées aux membres inscrits. Sur invitation uniquement.',cd:{brand:'Silhouette',discount:"Jusqu'à −40%",label:'Prochaine vente — Samedi 21 juin',places:18,total:40},photos:[],autoAccept:false},
   ventes:[{id:1,marque:'Silhouette',date:'Samedi 21 juin 2025',remise:'−40%'},{id:2,marque:'Lindberg',date:'Samedi 28 juin 2025',remise:'−35%'},{id:3,marque:'ic! Berlin',date:'Samedi 5 juillet 2025',remise:'−45%'}],
   creneaux:[{heure:'10h00',complet:false},{heure:'10h30',complet:false},{heure:'11h00',complet:false},{heure:'11h30',complet:false},{heure:'12h00',complet:false},{heure:'12h30',complet:false},{heure:'14h30',complet:false},{heure:'15h00',complet:false},{heure:'15h30',complet:false},{heure:'16h00',complet:false},{heure:'16h30',complet:false},{heure:'17h00',complet:false},{heure:'17h30',complet:false},{heure:'18h00',complet:false},{heure:'18h30',complet:false}],
   users:[{id:'u1',prenom:'Marie',nom:'Dupont',email:'marie@test.fr',pwd:'test123',role:'client',tel:'06 11 22 33 44',newsletter:true}],
@@ -923,10 +942,7 @@ function selectEventFromHome(id){
   selectedVenteId=id;
   const v=DB.ventes.find(x=>String(x.id)===String(id));
   document.getElementById('rdv-vente-title').textContent=v.marque+' — '+v.date;
-  document.getElementById('rdv-creneaux-grid').innerHTML=DB.creneaux.map((c,i)=>c.complet
-    ?`<div class="creneau complet">${c.heure}<br><small>Complet</small></div>`
-    :`<div class="creneau" onclick="pickRdvCreneau(this,${i})">${c.heure}</div>`
-  ).join('');
+  document.getElementById('rdv-creneaux-grid').innerHTML=buildCreneauxGrid(id);
   selectedCreneau=null;
   showPage('rdv');
   goRdvStep(2);
@@ -1209,14 +1225,27 @@ function renderRdvPage(fresh){
   }
 }
 
+function getCreneauxDisponibles(venteId){
+  const v=DB.ventes.find(x=>String(x.id)===String(venteId));
+  if(!v)return DB.creneaux.map(c=>({...c,pris:false}));
+  const prisList=DB.reservations
+    .filter(r=>r.marque===v.marque&&r.date===v.date&&(r.status==='confirmed'||r.status==='pending'))
+    .map(r=>r.creneau);
+  return DB.creneaux.map(c=>({...c,pris:prisList.includes(c.heure)||c.complet}));
+}
+
+function buildCreneauxGrid(venteId){
+  return getCreneauxDisponibles(venteId).map((c,i)=>c.pris
+    ?`<div class="creneau complet">${c.heure}<br><small>Complet</small></div>`
+    :`<div class="creneau" onclick="pickRdvCreneau(this,${i})">${c.heure}</div>`
+  ).join('');
+}
+
 function selectRdvVente(id){
   selectedVenteId=id;
   const v=DB.ventes.find(x=>String(x.id)===String(id));
   document.getElementById('rdv-vente-title').textContent=v.marque+' — '+v.date;
-  document.getElementById('rdv-creneaux-grid').innerHTML=DB.creneaux.map((c,i)=>c.complet
-    ?`<div class="creneau complet">${c.heure}<br><small>Complet</small></div>`
-    :`<div class="creneau" onclick="pickRdvCreneau(this,${i})">${c.heure}</div>`
-  ).join('');
+  document.getElementById('rdv-creneaux-grid').innerHTML=buildCreneauxGrid(id);
   selectedCreneau=null;
   goRdvStep(2);
 }
@@ -1249,15 +1278,30 @@ function goRdvStep(n){
 function submitRdv(){
   if(!selectedVenteId||!selectedCreneau)return;
   const v=DB.ventes.find(x=>String(x.id)===String(selectedVenteId));
-  if(DB.reservations.find(r=>r.userId===currentUser.id&&r.date===v.date&&r.status==='confirmed'))
-    return showMsg('rdv-msg','error','Vous avez déjà une réservation ce samedi.');
+  if(DB.reservations.find(r=>r.userId===currentUser.id&&r.date===v.date&&(r.status==='confirmed'||r.status==='pending')))
+    return showMsg('rdv-msg','error','Vous avez déjà une réservation pour cette vente.');
   const rid='r'+Date.now();
-  const resa={id:rid,userId:currentUser.id,prenom:currentUser.prenom,nom:currentUser.nom||'',email:currentUser.email,marque:v.marque,creneau:selectedCreneau.heure,date:v.date,status:'pending'};
+  const ref='BLNK-'+rid.slice(-6).toUpperCase();
+  const autoAccept=DB.site.autoAccept||false;
+  const status=autoAccept?'confirmed':'pending';
+  const resa={id:rid,userId:currentUser.id,prenom:currentUser.prenom,nom:currentUser.nom||'',email:currentUser.email,marque:v.marque,creneau:selectedCreneau.heure,date:v.date,status};
   DB.reservations.push(resa);
   if(window._saveResa)window._saveResa(resa);
   lastConfirm=resa;
   selectedVenteId=null;selectedCreneau=null;
-  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'pending',to:resa.email,prenom:resa.prenom,marque:resa.marque,date:resa.date,creneau:resa.creneau,ref:'BLNK-'+rid.slice(-6).toUpperCase()})}).catch(()=>{});
+
+  if(autoAccept){
+    // Confirmation immédiate
+    markCreneauComplet(resa.creneau);
+    if(window._updateResa)window._updateResa(rid,{status:'confirmed'});
+    fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'confirmed',to:resa.email,prenom:resa.prenom,marque:resa.marque,date:resa.date,creneau:resa.creneau,ref})}).catch(()=>{});
+  } else {
+    // Mail pending au client
+    fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'pending',to:resa.email,prenom:resa.prenom,marque:resa.marque,date:resa.date,creneau:resa.creneau,ref})}).catch(()=>{});
+    // Mail notification à l'admin
+    fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'admin-notif',to:'o.blink@hotmail.com',prenom:resa.prenom,nom:resa.nom,email:resa.email,marque:resa.marque,date:resa.date,creneau:resa.creneau,ref,rid})}).catch(()=>{});
+  }
+
   showPage('confirm');
   renderPendingConfirm(resa);
 }
@@ -1592,11 +1636,21 @@ function adminConfirmResaPanel(id){
 }
 function adminDeleteResa(id){if(!confirm('Supprimer définitivement ?'))return;const r=DB.reservations.find(x=>x.id===id);if(r){const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c&&r.status==='confirmed')c.complet=false;}DB.reservations=DB.reservations.filter(x=>x.id!==id);if(window._deleteResa)window._deleteResa(id);renderReservations();renderDashboard();toast('Supprimée.');}
 
+function saveAutoAccept(){
+  DB.site.autoAccept=document.getElementById('toggle-auto-accept').checked;
+  if(window._saveSite)window._saveSite({autoAccept:DB.site.autoAccept});
+  document.getElementById('auto-accept-label').textContent=DB.site.autoAccept?'Acceptation automatique':'Acceptation manuelle';
+  toast(DB.site.autoAccept?'Acceptation automatique activée ✓':'Acceptation manuelle activée ✓');
+}
+
 function renderContenu(){
   const s=DB.site;
   document.getElementById('c-tag').value=s.tag;document.getElementById('c-title').value=s.title;document.getElementById('c-desc').value=s.desc;
   document.getElementById('c-cd-brand').value=s.cd.brand;document.getElementById('c-cd-discount').value=s.cd.discount;
   document.getElementById('c-cd-places').value=s.cd.places;document.getElementById('c-cd-total').value=s.cd.total;document.getElementById('c-cd-label').value=s.cd.label;
+  const autoAccept=s.autoAccept||false;
+  document.getElementById('toggle-auto-accept').checked=autoAccept;
+  document.getElementById('auto-accept-label').textContent=autoAccept?'Acceptation automatique':'Acceptation manuelle';
   renderAdminPhotos();
 }
 function saveContenu(){DB.site.tag=document.getElementById('c-tag').value;DB.site.title=document.getElementById('c-title').value;DB.site.desc=document.getElementById('c-desc').value;if(window._saveSite)window._saveSite({tag:DB.site.tag,title:DB.site.title,desc:DB.site.desc});renderPublic();toast('Contenu mis à jour ✓');}
