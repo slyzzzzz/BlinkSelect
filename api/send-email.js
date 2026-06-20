@@ -211,6 +211,36 @@ module.exports = async (req, res) => {
   <div class="footer">Blink Sélect · notification automatique</div>
 </div>
 </body></html>`;
+  } else if (type === 'mailing') {
+    const { subject: mailingSubject, body: mailingBody } = req.body;
+    subject = mailingSubject;
+    htmlContent = `
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<style>
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FAFAF8;margin:0;padding:0}
+  .wrap{max-width:560px;margin:40px auto;background:#fff;border:1px solid #E5E5E0}
+  .header{background:#1A1A18;padding:32px 40px}
+  .logo{font-size:20px;letter-spacing:0.06em;color:#B8A87A;font-weight:500}
+  .body{padding:40px}
+  .tag{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#B8A87A;margin-bottom:12px}
+  h1{font-size:22px;font-weight:400;color:#1A1A18;margin:0 0 16px}
+  p{font-size:14px;color:#6B6B65;line-height:1.8;margin:0 0 16px;white-space:pre-wrap}
+  .footer{padding:24px 40px;border-top:1px solid #E5E5E0;font-size:11px;color:#9B9B95}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header"><div class="logo">Blink Sélect</div></div>
+  <div class="body">
+    <div class="tag">Message de Blink Sélect</div>
+    <h1>Bonjour ${prenom},</h1>
+    <p>${mailingBody}</p>
+    <p style="margin-top:24px">À très bientôt,<br><strong>L'équipe Blink Sélect</strong></p>
+  </div>
+  <div class="footer">Blink Sélect · opticalblink.com<br>Vous recevez cet email car vous êtes membre Blink Sélect. Pour vous désabonner, contactez-nous.</div>
+</div>
+</body></html>`;
   } else {
     return res.status(400).json({ error: 'Type inconnu' });
   }
