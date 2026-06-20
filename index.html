@@ -324,7 +324,7 @@ footer p{font-size:0.73rem;color:var(--muted)}
     <div class="check-group">
       <label class="check-row required-check"><input type="checkbox" id="r2-cgv"><span>J'ai lu et j'accepte les <a onclick="document.getElementById('overlay-cgv').classList.add('active')">Conditions Générales de Vente</a>. <span style="color:var(--danger)">*</span></span></label>
       <label class="check-row required-check"><input type="checkbox" id="r2-rgpd"><span>J'accepte que mes données personnelles soient traitées par Blink Sélect conformément à la <a onclick="document.getElementById('overlay-cgv').classList.add('active')">politique de confidentialité</a> (RGPD). <span style="color:var(--danger)">*</span></span></label>
-      <label class="check-row"><input type="checkbox" id="r2-mail"><span>Je souhaite recevoir les invitations des prochaines ventes privées par email.</span></label>
+      <label class="check-row"><input type="checkbox" id="r2-mail"><span>Je ne souhaite pas recevoir les invitations des prochaines ventes privées par email.</span></label>
     </div>
     <div class="msg" id="r2-msg"></div>
     <button class="btn-primary" style="width:100%;margin-top:1.5rem;padding:1rem" onclick="submitRegisterPage()">Créer mon compte →</button>
@@ -1074,7 +1074,7 @@ function submitRegisterPage(){
   const now=Date.now();
   if(now-lastVerifySent<30000)return showMsg('r2-msg','error','Veuillez patienter '+(Math.ceil((30000-(now-lastVerifySent))/1000))+' secondes avant de renvoyer un code.');
   lastVerifySent=now;
-  pendingUser={prenom,nom,email,pwd,tel:telFormatted,newsletter:document.getElementById('r2-mail').checked,rgpdConsent:true,rgpdDate:new Date().toISOString()};
+  pendingUser={prenom,nom,email,pwd,tel:telFormatted,newsletter:!document.getElementById('r2-mail').checked,rgpdConsent:true,rgpdDate:new Date().toISOString()};
   verifyCode=String(Math.floor(100000+Math.random()*900000));
   verifyExpiry=Date.now()+10*60*1000;
   fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'verification',to:email,prenom,code:verifyCode})}).catch(()=>{});
@@ -1532,13 +1532,24 @@ function renderDashboard(){
 
 function adminCancelResa(id){
   const r=DB.reservations.find(x=>x.id===id);
-  if(r){r.status='cancelled';const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c)c.complet=false;}
-  renderDashboard();toast('Réservation annulée.');
+  if(r){r.status='cancelled';const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c)c.complet=false;if(window._updateResa)window._updateResa(id,{status:'cancelled'});if(window._saveCreneaux)window._saveCreneaux(DB.creneaux);}
+  renderDashboard();renderReservations();toast('Réservation annulée.');
 }
 function adminConfirmResa(id){
   const r=DB.reservations.find(x=>x.id===id);
-  if(r){r.status='confirmed';markCreneauComplet(r.creneau);}
-  renderDashboard();toast('Réservation réactivée.');
+  if(r){
+    r.status='confirmed';
+    markCreneauComplet(r.creneau);
+    if(window._updateResa)window._updateResa(id,{status:'confirmed'});
+    if(window._saveCreneaux)window._saveCreneaux(DB.creneaux);
+    const emailTo=r.email||(DB.users.find(u=>u.id===r.userId)||{}).email||'';
+    const prenomTo=r.prenom||(DB.users.find(u=>u.id===r.userId)||{}).prenom||'';
+    if(emailTo){
+      fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'confirmed',to:emailTo,prenom:prenomTo,marque:r.marque,date:r.date,creneau:r.creneau,ref:'BLNK-'+id.slice(-6).toUpperCase()})})
+        .then(res=>res.json()).then(d=>console.log('Mail confirmed:',d)).catch(e=>console.error('Mail error:',e));
+    }
+  }
+  renderDashboard();renderReservations();toast('Confirmée — mail envoyé ✓');
 }
 
 function renderVentes(){
