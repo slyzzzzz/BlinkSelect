@@ -1,284 +1,1991 @@
-const https = require('https');
-
-module.exports = async (req, res) => {
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const { type, to, prenom, marque, date, creneau, ref } = req.body;
-  const API_KEY = process.env.BREVO_API_KEY;
-  const SENDER_EMAIL = process.env.SENDER_EMAIL || 'o.blink@hotmail.com';
-  const SENDER_NAME = 'Blink Sélect';
-
-  if (!API_KEY) return res.status(500).json({ error: 'API key manquante' });
-
-  let subject, htmlContent;
-
-  if (type === 'pending') {
-    subject = 'Votre demande est en cours d\'examen — Blink Sélect';
-    htmlContent = `
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8">
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blink Sélect — Ventes Privées</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FAFAF8;margin:0;padding:0}
-  .wrap{max-width:560px;margin:40px auto;background:#fff;border:1px solid #E5E5E0}
-  .header{background:#1A1A18;padding:32px 40px}
-  .logo{font-size:20px;letter-spacing:0.06em;color:#B8A87A;font-weight:500}
-  .logo em{color:#B8A87A;font-style:normal}
-  .body{padding:40px}
-  .tag{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#B8A87A;margin-bottom:12px}
-  h1{font-size:24px;font-weight:400;color:#1A1A18;margin:0 0 16px}
-  p{font-size:14px;color:#6B6B65;line-height:1.8;margin:0 0 16px}
-  .recap{background:#FAFAF8;border:1px solid #E5E5E0;padding:20px;margin:24px 0}
-  .recap-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E5E0;font-size:13px}
-  .recap-row:last-child{border:none}
-  .recap-row span:first-child{color:#6B6B65}
-  .recap-row span:last-child{font-weight:500;color:#1A1A18}
-  .info{background:#fff8e8;border:1px solid #d4b86a;padding:16px;font-size:13px;color:#9a7d2e;line-height:1.7}
-  .footer{padding:24px 40px;border-top:1px solid #E5E5E0;font-size:12px;color:#6B6B65}
+
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--ivory:#FAFAF8;--charcoal:#1A1A18;--muted:#6B6B65;--border:#E5E5E0;--gold:#B8A87A;--danger:#c0392b;--success:#27704a;}
+html{scroll-behavior:smooth}
+#page-login nav, #page-forgot nav, #page-register nav{display:none}
+body{font-family:'Inter',sans-serif;background:var(--ivory);color:var(--charcoal);min-height:100vh}
+nav{display:flex;align-items:center;justify-content:space-between;padding:1.4rem 3rem;border-bottom:0.5px solid var(--border);background:var(--ivory);position:sticky;top:0;z-index:200}
+.logo{font-family:'Playfair Display',serif;font-size:1.35rem;letter-spacing:0.06em;font-weight:500;cursor:pointer}
+.logo em{color:var(--gold);font-style:normal}
+.nav-links{display:flex;gap:2rem;align-items:center}
+nav a{font-size:0.76rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;cursor:pointer;transition:color 0.2s}
+nav a:hover{color:var(--charcoal)}
+.nav-btn{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;background:var(--charcoal);color:var(--ivory);border:none;padding:0.55rem 1.2rem;cursor:pointer;font-family:'Inter',sans-serif;transition:background 0.2s}
+.nav-btn:hover{background:#2d2d2a}
+.nav-btn.outline{background:transparent;color:var(--charcoal);border:0.5px solid var(--border)}
+.nav-btn.outline:hover{background:var(--border)}
+.page{display:none}.page.active{display:block}
+/* HERO */
+.hero{padding:6rem 3rem 4rem;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;max-width:1100px;margin:0 auto}
+.hero-tag{font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:1.1rem}
+.hero h1{font-family:'Playfair Display',serif;font-size:3rem;font-weight:400;line-height:1.15;margin-bottom:1.4rem}
+.hero p{font-size:0.93rem;color:var(--muted);line-height:1.8;margin-bottom:2rem}
+.btn-primary{display:inline-block;background:var(--charcoal);color:var(--ivory);font-size:0.73rem;letter-spacing:0.12em;text-transform:uppercase;padding:0.85rem 1.8rem;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:background 0.2s}
+.btn-primary:hover{background:#2d2d2a}
+.btn-danger{background:var(--danger);color:#fff;font-size:0.73rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.7rem 1.4rem;cursor:pointer;border:none;font-family:'Inter',sans-serif}
+.countdown-card{background:#fff;border:0.5px solid var(--border);padding:2rem}
+.brand-label{font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:0.5rem}
+.countdown-card h2{font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:400;margin-bottom:0.4rem}
+.discount-badge{display:inline-block;background:var(--charcoal);color:var(--ivory);font-size:0.68rem;letter-spacing:0.1em;padding:0.28rem 0.75rem;margin-bottom:1.4rem}
+.timer{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;text-align:center;margin-bottom:1.4rem}
+.timer-unit{background:var(--ivory);padding:0.75rem 0.3rem;border:0.5px solid var(--border)}
+.timer-unit .num{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:400;display:block}
+.timer-unit .lbl{font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);display:block;margin-top:0.2rem}
+.places-left{font-size:0.76rem;color:var(--muted);text-align:center}
+.places-left strong{color:var(--charcoal)}
+.divider{border:none;border-top:0.5px solid var(--border);margin:0 3rem}
+.section{padding:4rem 3rem;max-width:1100px;margin:0 auto}
+.section-label{font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:0.7rem}
+.section h2{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:400;margin-bottom:2.2rem}
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
+.form-group{display:flex;flex-direction:column;gap:0.4rem}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)}
+.form-group input,.form-group select,.form-group textarea{background:#fff;border:0.5px solid var(--border);padding:0.72rem 1rem;font-family:'Inter',sans-serif;font-size:0.86rem;color:var(--charcoal);outline:none;width:100%;-webkit-appearance:none;appearance:none;resize:vertical}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--charcoal)}
+.select-wrap{position:relative}.select-wrap::after{content:'↓';position:absolute;right:1rem;top:50%;transform:translateY(-50%);font-size:0.72rem;color:var(--muted);pointer-events:none}
+/* CHECKBOXES */
+.check-group{display:flex;flex-direction:column;gap:0.75rem;margin-top:1.5rem;margin-bottom:1rem}
+.check-row{display:flex;align-items:flex-start;gap:0.75rem;font-size:0.8rem;color:var(--muted);line-height:1.5;cursor:pointer}
+.check-row input[type=checkbox]{width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--charcoal);cursor:pointer}
+.check-row a{color:var(--charcoal);text-decoration:underline;cursor:pointer}
+.check-row.required-check{color:var(--charcoal)}
+/* CRENEAUX */
+.creneaux{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-top:0.5rem}
+.creneau{border:0.5px solid var(--border);padding:0.78rem 0.5rem;text-align:center;cursor:pointer;font-size:0.8rem;background:#fff;transition:all 0.15s;line-height:1.4}
+.creneau:hover{border-color:var(--charcoal)}.creneau.selected{background:var(--charcoal);color:var(--ivory);border-color:var(--charcoal)}
+.creneau.complet{background:var(--ivory);color:#bbb;cursor:not-allowed;font-size:0.72rem}
+/* MSGS */
+.submit-area{margin-top:2rem;display:flex;align-items:center;gap:2rem;flex-wrap:wrap}
+.rgpd{font-size:0.73rem;color:var(--muted);line-height:1.6;max-width:400px}
+.msg{padding:1rem 1.4rem;margin-top:1.2rem;font-size:0.82rem;display:none}
+.msg.success{background:#eaf4ee;color:var(--success);border:0.5px solid #b8ddc9}
+.msg.error{background:#fdf0ee;color:var(--danger);border:0.5px solid #f5c0b8}
+.msg.active{display:block}
+/* MODALS */
+.overlay{display:none;position:fixed;inset:0;background:rgba(20,20,18,0.55);z-index:500;align-items:center;justify-content:center}
+.overlay.active{display:flex}
+.modal{background:var(--ivory);border:0.5px solid var(--border);padding:2.5rem;width:100%;max-width:420px;position:relative;max-height:90vh;overflow-y:auto}
+.modal h3{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:400;margin-bottom:0.4rem}
+.modal p.sub{font-size:0.82rem;color:var(--muted);margin-bottom:1.8rem}
+.modal-close{position:absolute;top:1.2rem;right:1.4rem;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted)}
+.modal .form-group{margin-bottom:1rem}
+.modal .btn-primary{width:100%;text-align:center;margin-top:0.5rem;padding:0.85rem}
+.switch-auth{text-align:center;margin-top:1.2rem;font-size:0.78rem;color:var(--muted)}
+.switch-auth span{color:var(--charcoal);cursor:pointer;text-decoration:underline}
+.auth-error{color:var(--danger);font-size:0.78rem;margin-top:0.7rem;display:none}
+/* CLIENT */
+.client-wrap{max-width:760px;margin:3rem auto;padding:0 2rem}
+.client-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2.5rem}
+.client-header h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400}
+.client-header p{font-size:0.82rem;color:var(--muted);margin-top:0.3rem}
+.resa-card{background:#fff;border:0.5px solid var(--border);padding:1.5rem 1.8rem;margin-bottom:1rem}
+.resa-card .rc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}
+.resa-card h3{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:400}
+.resa-badge{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.25rem 0.7rem;border:0.5px solid}
+.resa-badge.confirmed{color:var(--success);border-color:var(--success)}
+.resa-badge.cancelled{color:var(--danger);border-color:var(--danger)}
+.resa-badge.pending{color:#9a7d2e;border-color:#d4b86a;background:#fff8e8}
+.resa-meta{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem}
+.resa-meta-item{font-size:0.8rem;color:var(--muted)}.resa-meta-item strong{color:var(--charcoal);display:block;font-size:0.85rem;margin-top:0.1rem}
+.resa-actions{display:flex;gap:0.8rem;margin-top:1.2rem;flex-wrap:wrap}
+.empty-state{text-align:center;padding:4rem 2rem;color:var(--muted);font-size:0.88rem}
+/* ADMIN */
+.admin-layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 65px)}
+.admin-sidebar{background:#fff;border-right:0.5px solid var(--border);padding:2rem 0;display:flex;flex-direction:column;justify-content:space-between}
+.admin-sidebar h4{font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);padding:0 1.5rem;margin-bottom:0.8rem}
+.sidebar-item{display:block;padding:0.7rem 1.5rem;font-size:0.83rem;cursor:pointer;color:var(--muted);transition:all 0.15s;border-left:2px solid transparent}
+.sidebar-item:hover{color:var(--charcoal);background:var(--ivory)}
+.sidebar-item.active{color:var(--charcoal);border-left-color:var(--charcoal);background:var(--ivory);font-weight:500}
+.admin-content{padding:2.5rem 3rem;overflow-y:auto}
+.admin-content h2{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:400;margin-bottom:1.8rem}
+.admin-panel{display:none}.admin-panel.active{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2.5rem}
+.stat-card{background:#fff;border:0.5px solid var(--border);padding:1.2rem 1.5rem}
+.stat-card .s-label{font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem}
+.stat-card .s-num{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400}
+.admin-table{width:100%;border-collapse:collapse;font-size:0.83rem}
+.admin-table th{text-align:left;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);border-bottom:0.5px solid var(--border);padding:0.6rem 0.8rem}
+.admin-table td{padding:0.75rem 0.8rem;border-bottom:0.5px solid var(--border);vertical-align:middle}
+.admin-table tr:hover td{background:#fafaf6}
+.tbl-btn{background:none;border:0.5px solid var(--border);font-size:0.72rem;padding:0.28rem 0.65rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s}
+.tbl-btn:hover{background:var(--charcoal);color:var(--ivory);border-color:var(--charcoal)}
+.tbl-btn.danger{color:var(--danger);border-color:#f5c0b8}
+.tbl-btn.danger:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
+.tbl-btn.success{color:var(--success);border-color:#b8ddc9}
+.tbl-btn.success:hover{background:var(--success);color:#fff;border-color:var(--success)}
+.edit-card{background:#fff;border:0.5px solid var(--border);padding:1.5rem 1.8rem;margin-bottom:1.2rem}
+.edit-card h4{font-size:0.9rem;font-weight:500;margin-bottom:1.2rem;display:flex;justify-content:space-between;align-items:center}
+.edit-card .btn-primary{margin-top:1rem;font-size:0.7rem;padding:0.65rem 1.4rem}
+.add-btn{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;background:none;border:0.5px solid var(--border);padding:0.6rem 1.2rem;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:1.5rem;transition:all 0.15s}
+.add-btn:hover{background:var(--charcoal);color:var(--ivory);border-color:var(--charcoal)}
+.creneau-row{display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:0.5px solid var(--border);font-size:0.83rem}
+.creneau-row:last-child{border:none}
+.event-card{background:#fff;border:0.5px solid var(--border);padding:1.5rem 1.8rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.event-card-info h3{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:400;margin-bottom:0.5rem}
+.event-meta{display:flex;gap:1.5rem;flex-wrap:wrap}
+.event-meta-item{font-size:0.78rem;color:var(--muted)}.event-meta-item strong{color:var(--charcoal);display:block;font-size:0.84rem}
+/* SEARCH */
+.search-bar{display:flex;gap:0.8rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.search-bar input{flex:1;min-width:200px;background:#fff;border:0.5px solid var(--border);padding:0.65rem 1rem;font-family:'Inter',sans-serif;font-size:0.84rem;color:var(--charcoal);outline:none}
+.search-bar input:focus{border-color:var(--charcoal)}
+/* STEPPER */
+.step-item{display:flex;flex-direction:column;align-items:center;gap:0.3rem}
+.step-num{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.75rem;background:#fff;color:var(--muted);font-weight:500;transition:all 0.2s}
+.step-lbl{font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);transition:color 0.2s}
+.step-item.active .step-num{background:var(--charcoal);color:#fff;border-color:var(--charcoal)}
+.step-item.active .step-lbl{color:var(--charcoal)}
+.step-item.done .step-num{background:var(--success);color:#fff;border-color:var(--success)}
+.step-line{width:60px;height:1px;background:var(--border);margin-top:-14px}
+/* GATE */
+.gate{position:fixed;inset:0;background:var(--ivory);z-index:400;display:flex;align-items:center;justify-content:center;padding:2rem}
+.gate-inner{text-align:center;max-width:480px}
+.gate-logo{font-family:'Playfair Display',serif;font-size:1.6rem;letter-spacing:0.08em;font-weight:500;margin-bottom:2rem}
+.gate-logo em{color:var(--gold);font-style:normal}
+.gate-tag{font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem}
+.gate h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;line-height:1.2;margin-bottom:1rem}
+.gate p{font-size:0.88rem;color:var(--muted);line-height:1.8;margin-bottom:2rem}
+.gate-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+/* ACCOUNT MENU */
+.account-menu-wrap{position:relative}
+.account-dropdown{display:none;position:absolute;right:0;top:calc(100% + 8px);background:#fff;border:0.5px solid var(--border);min-width:180px;z-index:300;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
+.account-dropdown.open{display:block}
+.account-item{padding:0.75rem 1.2rem;font-size:0.78rem;cursor:pointer;color:var(--charcoal);transition:background 0.15s}
+.account-item:hover{background:var(--ivory)}
+.account-item.danger{color:var(--danger);border-top:0.5px solid var(--border)}
+.account-item.danger:hover{background:#fdf0ee}
+/* CONFIRM PAGE */
+.confirm-card{background:#fff;border:0.5px solid var(--border);padding:2.5rem;text-align:center;max-width:500px;margin:4rem auto}
+.confirm-card .check-circle{width:56px;height:56px;border-radius:50%;background:#eaf4ee;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin:0 auto 1.2rem}
+.confirm-card h2{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:400;margin-bottom:0.5rem}
+.confirm-card p{font-size:0.83rem;color:var(--muted);line-height:1.7;margin-bottom:1.5rem}
+.confirm-recap{background:var(--ivory);border:0.5px solid var(--border);padding:1.2rem;margin-bottom:1.5rem;text-align:left}
+.confirm-recap-row{display:flex;justify-content:space-between;padding:0.4rem 0;font-size:0.82rem;border-bottom:0.5px solid var(--border)}
+.confirm-recap-row:last-child{border:none}
+.confirm-recap-row span:first-child{color:var(--muted)}
+.confirm-recap-row span:last-child{font-weight:500}
+footer{border-top:0.5px solid var(--border);padding:1.8rem 3rem;display:flex;justify-content:space-between;align-items:center;margin-top:4rem}
+footer .logo{font-size:1rem}
+footer p{font-size:0.73rem;color:var(--muted)}
+/* OTP BOXES */
+.otp-box{width:48px;height:58px;text-align:center;font-size:1.6rem;font-family:'Playfair Display',serif;border:0.5px solid var(--border);background:#fff;outline:none;color:var(--charcoal);transition:border-color 0.15s}
+.otp-box:focus{border-color:var(--charcoal)}
+.otp-box.filled{border-color:var(--charcoal);background:var(--ivory)}
+/* AUTH LAYOUT */
+.auth-page-wrap{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+.auth-left{background:var(--charcoal);display:flex;flex-direction:column;justify-content:space-between;padding:3rem;position:relative;overflow:hidden}
+.auth-right{display:flex;flex-direction:column;justify-content:center;padding:4rem 3rem;max-width:480px;margin:0 auto;width:100%}
+.auth-mobile-logo{display:none;font-family:'Playfair Display',serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--charcoal);margin-bottom:2rem}
+.auth-mobile-logo em{color:var(--gold);font-style:normal}
+
+@media(max-width:720px){
+  .auth-page-wrap{grid-template-columns:1fr;min-height:100vh}
+  .auth-left{display:none}
+  .auth-right{padding:3rem 1.5rem;max-width:100%;min-height:100vh;justify-content:center}
+  .auth-mobile-logo{display:block}
+}
+.toggle-switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--border);transition:.3s;border-radius:24px}
+.toggle-slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;transition:.3s;border-radius:50%}
+.toggle-switch input:checked+.toggle-slider{background:var(--charcoal)}
+.toggle-switch input:checked+.toggle-slider:before{transform:translateX(20px)}
+.c-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.5);cursor:pointer;transition:background 0.2s}
+.c-dot.active{background:#fff}
+/* ══════════════════════════════════════
+   ANIMATIONS GLOBALES
+══════════════════════════════════════ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideRight{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+.page{animation:fadeUp 0.35s cubic-bezier(0.22,1,0.36,1) both}
+.event-card{animation:fadeUp 0.35s cubic-bezier(0.22,1,0.36,1) both}
+.event-card:nth-child(1){animation-delay:0.05s}
+.event-card:nth-child(2){animation-delay:0.1s}
+.event-card:nth-child(3){animation-delay:0.15s}
+.resa-card{animation:fadeUp 0.35s cubic-bezier(0.22,1,0.36,1) both}
+.stat-card{animation:scaleIn 0.3s cubic-bezier(0.22,1,0.36,1) both}
+.stat-card:nth-child(1){animation-delay:0.05s}
+.stat-card:nth-child(2){animation-delay:0.1s}
+.stat-card:nth-child(3){animation-delay:0.15s}
+.btn-primary{transition:transform 0.15s,box-shadow 0.15s,background 0.15s}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,0.13)}
+.btn-primary:active{transform:translateY(0);box-shadow:none}
+.creneau{transition:all 0.18s cubic-bezier(0.22,1,0.36,1)}
+.creneau:hover:not(.complet){transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+.event-card{transition:box-shadow 0.2s,transform 0.2s}
+.event-card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.07);transform:translateY(-1px)}
+.tbl-btn{transition:all 0.15s}
+.nav-btn{transition:all 0.15s}
+.otp-box{transition:border-color 0.15s,background 0.15s,transform 0.1s}
+.otp-box:focus{transform:scale(1.05)}
+input,textarea,select{transition:border-color 0.18s,box-shadow 0.18s}
+input:focus,textarea:focus{box-shadow:0 0 0 3px rgba(184,168,122,0.15)}
+
+/* ══════════════════════════════════════
+   MOBILE
+══════════════════════════════════════ */
+@media(max-width:720px){
+  /* NAV */
+  nav{padding:0.85rem 1.1rem}
+  .logo{font-size:1.1rem}
+  .nav-links{gap:0.5rem}
+  .nav-links a{display:none}
+  .nav-btn{font-size:0.67rem;padding:0.45rem 0.8rem}
+
+  /* HERO */
+  .hero{grid-template-columns:1fr;padding:1.8rem 1.1rem 1.4rem;gap:1.2rem}
+  .hero h1{font-size:1.6rem;line-height:1.25}
+  .hero p{font-size:0.85rem;margin-bottom:1.2rem}
+  .btn-primary{width:100%;text-align:center;padding:0.95rem}
+
+  /* COUNTDOWN */
+  .countdown-card{padding:1.3rem 1rem}
+  .countdown-card h2{font-size:1.25rem}
+  .timer-unit .num{font-size:1.3rem}
+  .timer-unit{padding:0.5rem 0.15rem}
+
+  /* SECTIONS */
+  .section{padding:1.8rem 1.1rem}
+  .divider{margin:0 1.1rem}
+  .section h2{font-size:1.35rem;margin-bottom:1.3rem}
+
+  /* FORMULAIRES */
+  .form-grid{grid-template-columns:1fr;gap:0.85rem}
+  .form-group.full{grid-column:1}
+  .form-group input,.form-group select,.form-group textarea{padding:0.9rem 1rem;font-size:0.92rem;border-radius:2px}
+  .form-group label{font-size:0.72rem}
+
+  /* CRÉNEAUX */
+  .creneaux{grid-template-columns:repeat(3,1fr);gap:0.5rem}
+  .creneau{padding:0.75rem 0.3rem;font-size:0.8rem}
+
+  /* SUBMIT */
+  .submit-area{flex-direction:column;align-items:stretch;gap:0.9rem}
+  .submit-area .btn-primary{text-align:center}
+
+  /* EVENTS */
+  .event-card{flex-direction:column;align-items:flex-start;gap:0.7rem;padding:1.1rem}
+  .event-card .btn-primary{width:100%;text-align:center}
+
+  /* CLIENT */
+  .client-wrap{padding:0 1.1rem;margin:1.8rem auto}
+  .client-header{flex-direction:column;gap:0.8rem}
+  .client-header h1{font-size:1.35rem}
+  .resa-card{padding:1.1rem}
+  .resa-meta{grid-template-columns:1fr 1fr;gap:0.4rem}
+
+  /* FOOTER */
+  footer{flex-direction:column;gap:0.5rem;text-align:center;padding:1.3rem 1.1rem}
+
+  /* PAGE LOGIN / FORGOT : géré par .auth-page-wrap */
+
+  /* PAGE REGISTER */
+  #page-register>div{padding:2rem 1.4rem}
+  #page-register h1{font-size:1.6rem}
+
+  /* PAGE VERIFY OTP */
+  #page-verify>div{padding:3rem 1.4rem;margin:0}
+  #page-verify h1{font-size:1.7rem}
+  .otp-box{width:42px;height:52px;font-size:1.3rem}
+  #otp-boxes{gap:0.45rem}
+
+  /* CONFIRM */
+  .confirm-card{margin:1.5rem 1.1rem;padding:1.5rem 1.1rem}
+
+  /* ADMIN */
+  .admin-layout{grid-template-columns:1fr}
+  .admin-sidebar{display:none}
+  .admin-content{padding:1.1rem}
+  .stats-grid{grid-template-columns:1fr 1fr;gap:0.6rem}
+  .stat-card{padding:0.9rem}
+  .stat-card .s-num{font-size:1.5rem}
+  .admin-table{font-size:0.73rem}
+  .admin-table th,.admin-table td{padding:0.45rem 0.35rem}
+  .admin-table th:nth-child(2),.admin-table td:nth-child(2){display:none} /* cacher email sur mobile */
+
+  /* STEPS */
+  .step-line{width:24px}
+  .step-label{display:none}
+
+  /* RDV */
+  .rdv-wrap{padding:1.5rem 1.1rem}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="header"><div class="logo">Blink <em>Sélect</em></div></div>
-  <div class="body">
-    <div class="tag">Demande reçue</div>
-    <h1>Bonjour ${prenom},</h1>
-    <p>Nous avons bien reçu votre demande de réservation pour la vente privée <strong>${marque}</strong>. Notre équipe examine votre dossier en ce moment.</p>
-    <div class="recap">
-      <div class="recap-row"><span>Marque</span><span>${marque}</span></div>
-      <div class="recap-row"><span>Date</span><span>${date}</span></div>
-      <div class="recap-row"><span>Créneau demandé</span><span>${creneau}</span></div>
-      <div class="recap-row"><span>Référence</span><span>${ref}</span></div>
+
+<nav>
+  <div class="logo" onclick="if(currentUser)goHome()">Blink <em>Sélect</em></div>
+  <div class="nav-links" id="nav-links">
+    <button class="nav-btn outline" onclick="showPage('login')">Se connecter</button>
+    <button class="nav-btn" onclick="closeGate();showPage('register')">Créer un compte</button>
+  </div>
+</nav>
+
+<!-- GATE -->
+<div id="site-gate" class="gate">
+  <div class="gate-inner">
+    <div class="gate-logo">Blink <em>Sélect</em></div>
+    <div class="gate-tag">Ventes privées · Sur invitation</div>
+    <h1>Accédez aux remises exclusives</h1>
+    <p>Les offres Blink Sélect sont réservées aux membres inscrits. Créez votre compte gratuitement ou connectez-vous pour découvrir les ventes privées du moment.</p>
+    <div class="gate-btns">
+      <button class="btn-primary" style="width:auto" onclick="closeGate();showPage('register')">Créer un compte</button>
+      <button class="nav-btn outline" style="padding:0.85rem 2rem;font-size:0.73rem;letter-spacing:0.12em" onclick="closeGate();showPage('login')">Se connecter</button>
     </div>
-    <div class="info">⏳ Nous recevons beaucoup de demandes pour cette vente. Vous recevrez une réponse sous <strong>10 à 30 minutes</strong>. Pensez à vérifier vos spams.</div>
   </div>
-  <div class="footer">Blink Sélect · o.blink@hotmail.com<br>Vous recevez cet email car vous avez effectué une demande sur blink-select.vercel.app</div>
 </div>
-</body></html>`;
-  } else if (type === 'confirmed') {
-    subject = '🎉 Félicitations, vous êtes accepté ! — Blink Sélect';
-    htmlContent = `
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<style>
-  body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FAFAF8;margin:0;padding:0}
-  .wrap{max-width:560px;margin:40px auto;background:#fff;border:1px solid #E5E5E0}
-  .header{background:#1A1A18;padding:32px 40px}
-  .logo{font-size:20px;letter-spacing:0.06em;color:#B8A87A;font-weight:500}
-  .body{padding:40px}
-  .tag{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#27704a;margin-bottom:12px}
-  h1{font-size:24px;font-weight:400;color:#1A1A18;margin:0 0 16px}
-  p{font-size:14px;color:#6B6B65;line-height:1.8;margin:0 0 16px}
-  .recap{background:#FAFAF8;border:1px solid #E5E5E0;padding:20px;margin:24px 0}
-  .recap-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E5E0;font-size:13px}
-  .recap-row:last-child{border:none}
-  .recap-row span:first-child{color:#6B6B65}
-  .recap-row span:last-child{font-weight:500;color:#1A1A18}
-  .badge{display:inline-block;background:#27704a;color:#fff;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:6px 14px;margin-bottom:24px}
-  .info{background:#eaf4ee;border:1px solid #b8ddc9;padding:16px;font-size:13px;color:#27704a;line-height:1.7}
-  .footer{padding:24px 40px;border-top:1px solid #E5E5E0;font-size:12px;color:#6B6B65}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="header"><div class="logo">Blink Sélect</div></div>
-  <div class="body">
-    <div class="tag">✓ Demande acceptée</div>
-    <h1>Félicitations ${prenom} !</h1>
-    <p>Votre place est confirmée pour la vente privée <strong>${marque}</strong>. Nous avons le plaisir de vous accueillir.</p>
-    <div class="badge">✓ Place confirmée</div>
-    <div class="recap">
-      <div class="recap-row"><span>Marque</span><span>${marque}</span></div>
-      <div class="recap-row"><span>Date</span><span>${date}</span></div>
-      <div class="recap-row"><span>Créneau</span><span>${creneau}</span></div>
-      <div class="recap-row"><span>Référence</span><span>${ref}</span></div>
+
+<!-- PAGE PUBLIC -->
+<div class="page active" id="page-public">
+  <section class="hero" id="hero-guest">
+    <div>
+      <div class="hero-tag" id="hero-tag">Ventes privées — Chaque samedi</div>
+      <h1 id="hero-title">L'accès exclusif aux grandes marques d'optique</h1>
+      <p id="hero-desc">Chaque samedi, une marque partenaire. Des remises réservées aux membres inscrits. Sur invitation uniquement.</p>
+      <button class="btn-primary" onclick="closeGate();showPage('register')">Rejoindre Blink Sélect</button>
     </div>
-    <div class="info">📎 Votre ticket d'accès est joint à cet email en PDF. Présentez-le à l'entrée de la vente privée.</div>
-    <p style="margin-top:24px">À très bientôt,<br><strong>L'équipe Blink Sélect</strong></p>
-  </div>
-  <div class="footer">Blink Sélect · o.blink@hotmail.com<br>Vous recevez cet email car votre réservation a été confirmée.</div>
-</div>
-</body></html>`;
-  } else if (type === 'inscription') {
-    subject = 'Bienvenue chez Blink Sélect !';
-    htmlContent = `
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<style>
-  body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FAFAF8;margin:0;padding:0}
-  .wrap{max-width:560px;margin:40px auto;background:#fff;border:1px solid #E5E5E0}
-  .header{background:#1A1A18;padding:32px 40px}
-  .logo{font-size:20px;letter-spacing:0.06em;color:#B8A87A;font-weight:500}
-  .body{padding:40px}
-  .tag{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#B8A87A;margin-bottom:12px}
-  h1{font-size:24px;font-weight:400;color:#1A1A18;margin:0 0 16px}
-  p{font-size:14px;color:#6B6B65;line-height:1.8;margin:0 0 16px}
-  .footer{padding:24px 40px;border-top:1px solid #E5E5E0;font-size:12px;color:#6B6B65}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="header"><div class="logo">Blink Sélect</div></div>
-  <div class="body">
-    <div class="tag">Bienvenue</div>
-    <h1>Bonjour ${prenom},</h1>
-    <p>Votre compte Blink Sélect a bien été créé. Vous avez désormais accès aux ventes privées réservées à nos membres.</p>
-    <p>Connectez-vous et réservez votre prochain créneau avant que les places ne soient prises.</p>
-    <p style="margin-top:24px">À très bientôt,<br><strong>L'équipe Blink Sélect</strong></p>
-  </div>
-  <div class="footer">Blink Sélect · o.blink@hotmail.com</div>
-</div>
-</body></html>`;
-  } else if (type === 'verification') {
-    const { code } = req.body;
-    subject = 'Votre code de vérification — Blink Sélect';
-    htmlContent = `
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<style>
-  body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FAFAF8;margin:0;padding:0}
-  .wrap{max-width:560px;margin:40px auto;background:#fff;border:1px solid #E5E5E0}
-  .header{background:#1A1A18;padding:32px 40px}
-  .logo{font-size:20px;letter-spacing:0.06em;color:#B8A87A;font-weight:500}
-  .body{padding:40px}
-  .tag{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#B8A87A;margin-bottom:12px}
-  h1{font-size:24px;font-weight:400;color:#1A1A18;margin:0 0 16px}
-  p{font-size:14px;color:#6B6B65;line-height:1.8;margin:0 0 16px}
-  .code-box{background:#1A1A18;color:#B8A87A;font-size:36px;font-weight:700;letter-spacing:0.3em;text-align:center;padding:28px;margin:28px 0}
-  .info{background:#fff8e8;border:1px solid #d4b86a;padding:16px;font-size:13px;color:#9a7d2e;line-height:1.7}
-  .footer{padding:24px 40px;border-top:1px solid #E5E5E0;font-size:12px;color:#6B6B65}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="header"><div class="logo">Blink Sélect</div></div>
-  <div class="body">
-    <div class="tag">Vérification</div>
-    <h1>Bonjour ${prenom},</h1>
-    <p>Entrez ce code pour confirmer votre adresse email et finaliser votre inscription.</p>
-    <div class="code-box">${code}</div>
-    <div class="info">⏱ Ce code est valable <strong>10 minutes</strong>. Ne le partagez avec personne.</div>
-  </div>
-  <div class="footer">Blink Sélect · o.blink@hotmail.com<br>Si vous n'avez pas créé de compte, ignorez cet email.</div>
-</div>
-</body></html>`;
-  } else if (type === 'admin-notif') {
-    const { nom, email: clientEmail, rid } = req.body;
-    subject = `🔔 Nouvelle réservation — ${prenom} ${nom} — ${marque}`;
-    htmlContent = `
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<style>
-  body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FAFAF8;margin:0;padding:0}
-  .wrap{max-width:560px;margin:40px auto;background:#fff;border:1px solid #E5E5E0}
-  .header{background:#1A1A18;padding:32px 40px}
-  .logo{font-size:20px;letter-spacing:0.06em;color:#B8A87A;font-weight:500}
-  .body{padding:40px}
-  .tag{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#B8A87A;margin-bottom:12px}
-  h1{font-size:22px;font-weight:400;color:#1A1A18;margin:0 0 16px}
-  .recap{background:#FAFAF8;border:1px solid #E5E5E0;padding:20px;margin:24px 0}
-  .recap-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E5E0;font-size:13px}
-  .recap-row:last-child{border:none}
-  .recap-row span:first-child{color:#6B6B65}
-  .recap-row span:last-child{font-weight:500;color:#1A1A18}
-  .actions{display:flex;gap:12px;margin-top:24px}
-  .btn-accept{background:#27704a;color:#fff;padding:12px 24px;text-decoration:none;font-size:13px;letter-spacing:0.05em;display:inline-block}
-  .btn-refuse{background:#c0392b;color:#fff;padding:12px 24px;text-decoration:none;font-size:13px;letter-spacing:0.05em;display:inline-block}
-  .footer{padding:24px 40px;border-top:1px solid #E5E5E0;font-size:12px;color:#6B6B65}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="header"><div class="logo">Blink Sélect — Admin</div></div>
-  <div class="body">
-    <div class="tag">Nouvelle demande</div>
-    <h1>Réservation en attente</h1>
-    <div class="recap">
-      <div class="recap-row"><span>Client</span><span>${prenom} ${nom}</span></div>
-      <div class="recap-row"><span>Email</span><span>${clientEmail}</span></div>
-      <div class="recap-row"><span>Marque</span><span>${marque}</span></div>
-      <div class="recap-row"><span>Date</span><span>${date}</span></div>
-      <div class="recap-row"><span>Créneau</span><span>${creneau}</span></div>
-      <div class="recap-row"><span>Référence</span><span>${ref}</span></div>
+    <div class="countdown-card">
+      <div class="brand-label" id="cd-label">Prochaine vente — Samedi 21 juin</div>
+      <h2 id="cd-brand">Silhouette</h2>
+      <div class="discount-badge" id="cd-discount">Jusqu'à −40%</div>
+      <div class="timer">
+        <div class="timer-unit"><span class="num" id="days">--</span><span class="lbl">Jours</span></div>
+        <div class="timer-unit"><span class="num" id="hours">--</span><span class="lbl">Heures</span></div>
+        <div class="timer-unit"><span class="num" id="mins">--</span><span class="lbl">Min</span></div>
+        <div class="timer-unit"><span class="num" id="secs">--</span><span class="lbl">Sec</span></div>
+      </div>
+      <p class="places-left"><strong id="cd-places">18 places restantes</strong> sur <span id="cd-total">40</span></p>
     </div>
-    <p style="font-size:13px;color:#6B6B65;margin-bottom:20px">Connectez-vous au panel admin pour accepter ou refuser cette réservation.</p>
-    <a href="https://blinkselect.vercel.app" class="btn-accept">→ Ouvrir le panel admin</a>
+  </section>
+
+  <!-- VUE CONNECTÉ -->
+  <div id="hero-member" style="display:none">
+    <div style="max-width:1100px;margin:0 auto;padding:3rem 3rem 1rem">
+      <div class="hero-tag">Bonjour, <span id="home-prenom">—</span> 👋</div>
+      <h1 style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:400;margin:0.5rem 0 0.4rem">Prochains événements</h1>
+      <p style="font-size:0.88rem;color:var(--muted);margin-bottom:2rem">Réservez votre créneau avant que les places ne soient prises.</p>
+      <div id="home-events"></div>
+      <!-- CARROUSEL PHOTOS -->
+      <div id="home-carousel-wrap" style="display:none;margin-top:2rem;position:relative;overflow:hidden;border:0.5px solid var(--border);border-radius:2px">
+        <div style="position:relative;width:100%;padding-top:56.25%">
+          <div id="home-carousel-track" style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;transition:transform 0.5s ease"></div>
+          <button onclick="carouselPrev()" style="position:absolute;left:0.8rem;top:50%;transform:translateY(-50%);background:rgba(26,26,24,0.7);color:#fff;border:none;width:36px;height:36px;font-size:1.1rem;cursor:pointer;z-index:10">‹</button>
+          <button onclick="carouselNext()" style="position:absolute;right:0.8rem;top:50%;transform:translateY(-50%);background:rgba(26,26,24,0.7);color:#fff;border:none;width:36px;height:36px;font-size:1.1rem;cursor:pointer;z-index:10">›</button>
+          <div id="carousel-dots" style="position:absolute;bottom:0.8rem;left:50%;transform:translateX(-50%);display:flex;gap:0.4rem;z-index:10"></div>
+        </div>
+      </div>
+    </div>
+    <div style="max-width:1100px;margin:0 auto;padding:0 3rem 3rem">
+      <div class="countdown-card" style="margin-top:1.5rem">
+        <div class="brand-label" id="cd-label2">Prochaine vente</div>
+        <h2 id="cd-brand2" style="font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:400;margin-bottom:0.4rem">—</h2>
+        <div class="discount-badge" id="cd-discount2">—</div>
+        <div class="timer">
+          <div class="timer-unit"><span class="num" id="days2">--</span><span class="lbl">Jours</span></div>
+          <div class="timer-unit"><span class="num" id="hours2">--</span><span class="lbl">Heures</span></div>
+          <div class="timer-unit"><span class="num" id="mins2">--</span><span class="lbl">Min</span></div>
+          <div class="timer-unit"><span class="num" id="secs2">--</span><span class="lbl">Sec</span></div>
+        </div>
+        <p class="places-left"><strong id="cd-places2">—</strong> sur <span id="cd-total2">—</span></p>
+      </div>
+    </div>
   </div>
-  <div class="footer">Blink Sélect · notification automatique</div>
+
+  <footer>
+    <div class="logo">Blink <em>Sélect</em></div>
+    <p>Ventes privées · Paris · Membres uniquement</p>
+    <p>o.blink@hotmail.com</p>
+  </footer>
 </div>
-</body></html>`;
-  } else if (type === 'mailing') {
-    const { subject: mailingSubject, body: mailingBody } = req.body;
-    subject = mailingSubject;
-    htmlContent = `
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<style>
-  body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FAFAF8;margin:0;padding:0}
-  .wrap{max-width:560px;margin:40px auto;background:#fff;border:1px solid #E5E5E0}
-  .header{background:#1A1A18;padding:32px 40px}
-  .logo{font-size:20px;letter-spacing:0.06em;color:#B8A87A;font-weight:500}
-  .body{padding:40px}
-  .tag{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#B8A87A;margin-bottom:12px}
-  h1{font-size:22px;font-weight:400;color:#1A1A18;margin:0 0 16px}
-  p{font-size:14px;color:#6B6B65;line-height:1.8;margin:0 0 16px;white-space:pre-wrap}
-  .footer{padding:24px 40px;border-top:1px solid #E5E5E0;font-size:11px;color:#9B9B95}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="header"><div class="logo">Blink Sélect</div></div>
-  <div class="body">
-    <div class="tag">Message de Blink Sélect</div>
-    <h1>Bonjour ${prenom},</h1>
-    <p>${mailingBody}</p>
-    <p style="margin-top:24px">À très bientôt,<br><strong>L'équipe Blink Sélect</strong></p>
+
+<!-- PAGE REGISTER -->
+<div class="page" id="page-register">
+  <div style="max-width:560px;margin:4rem auto;padding:0 2rem">
+    <div style="text-align:center;margin-bottom:2.5rem">
+      <div class="gate-tag">Inscription</div>
+      <h1 style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;margin-top:0.6rem">Créer votre compte</h1>
+      <p style="font-size:0.85rem;color:var(--muted);margin-top:0.6rem">Rejoignez Blink Sélect et accédez aux ventes privées.</p>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>Prénom</label><input type="text" id="r2-prenom" placeholder="Marie" autocomplete="given-name"></div>
+      <div class="form-group"><label>Nom</label><input type="text" id="r2-nom" placeholder="Dupont" autocomplete="family-name"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="r2-email" placeholder="marie@email.fr" autocomplete="email"></div>
+      <div class="form-group"><label>Confirmer l'email</label><input type="email" id="r2-email2" placeholder="marie@email.fr"></div>
+      <div class="form-group"><label>Téléphone</label><input type="tel" id="r2-tel" placeholder="06 00 00 00 00" autocomplete="tel"></div>
+      <div class="form-group"><label>Mot de passe <span style="font-size:0.6rem;color:var(--muted)">(6 car. min)</span></label><input type="password" id="r2-pwd" placeholder="••••••••"></div>
+      <div class="form-group full"><label>Confirmer le mot de passe</label><input type="password" id="r2-pwd2" placeholder="••••••••"></div>
+    </div>
+    <div class="check-group">
+      <label class="check-row required-check"><input type="checkbox" id="r2-cgv"><span>J'ai lu et j'accepte les <a onclick="document.getElementById('overlay-cgv').classList.add('active')">Conditions Générales de Vente</a>. <span style="color:var(--danger)">*</span></span></label>
+      <label class="check-row required-check"><input type="checkbox" id="r2-rgpd"><span>J'accepte que mes données personnelles soient traitées par Blink Sélect conformément à la <a onclick="document.getElementById('overlay-cgv').classList.add('active')">politique de confidentialité</a> (RGPD). <span style="color:var(--danger)">*</span></span></label>
+      <label class="check-row"><input type="checkbox" id="r2-mail"><span>Je ne souhaite pas recevoir les invitations des prochaines ventes privées par email.</span></label>
+    </div>
+    <div class="msg" id="r2-msg"></div>
+    <button class="btn-primary" style="width:100%;margin-top:1.5rem;padding:1rem" onclick="submitRegisterPage()">Créer mon compte →</button>
+    <p style="text-align:center;margin-top:1.2rem;font-size:0.78rem;color:var(--muted)">Déjà membre ? <span style="color:var(--charcoal);cursor:pointer;text-decoration:underline" onclick="showPage('login')">Se connecter</span></p>
   </div>
-  <div class="footer">Blink Sélect · opticalblink.com<br>Vous recevez cet email car vous êtes membre Blink Sélect. Pour vous désabonner, contactez-nous.</div>
 </div>
-</body></html>`;
+
+<!-- PAGE VÉRIFICATION EMAIL -->
+<div class="page" id="page-verify">
+  <div style="max-width:440px;margin:5rem auto;padding:0 2rem;text-align:center">
+    <div class="gate-tag">Vérification</div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;margin:0.6rem 0">Confirmez votre email</h1>
+    <p style="font-size:0.85rem;color:var(--muted);margin-top:0.6rem;line-height:1.7">Un code à 6 chiffres a été envoyé à <strong id="verify-email-display"></strong>. Saisissez-le ci-dessous.</p>
+    <div id="otp-boxes" style="display:flex;gap:0.6rem;justify-content:center;margin-top:2rem">
+      <input type="text" maxlength="1" class="otp-box" inputmode="numeric" pattern="[0-9]">
+      <input type="text" maxlength="1" class="otp-box" inputmode="numeric" pattern="[0-9]">
+      <input type="text" maxlength="1" class="otp-box" inputmode="numeric" pattern="[0-9]">
+      <input type="text" maxlength="1" class="otp-box" inputmode="numeric" pattern="[0-9]">
+      <input type="text" maxlength="1" class="otp-box" inputmode="numeric" pattern="[0-9]">
+      <input type="text" maxlength="1" class="otp-box" inputmode="numeric" pattern="[0-9]">
+    </div>
+    <div class="msg" id="verify-msg" style="margin-top:1rem"></div>
+    <button class="btn-primary" style="width:100%;margin-top:1.2rem;padding:1rem" onclick="submitVerifyCode()">Valider mon compte →</button>
+    <p style="margin-top:1.2rem;font-size:0.78rem;color:var(--muted)">Pas reçu ? <span style="color:var(--charcoal);cursor:pointer;text-decoration:underline" onclick="resendVerifyCode()">Renvoyer le code</span></p>
+  </div>
+</div>
+<div class="page" id="page-login">
+  <div class="auth-page-wrap">
+    <!-- Gauche : visuel desktop uniquement -->
+    <div class="auth-left">
+      <div class="logo" style="color:#fff" onclick="showPage('public');renderPublic()">Blink <em>Sélect</em></div>
+      <div>
+        <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:1.2rem">Ventes privées · Sur invitation</div>
+        <p style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:400;color:#fff;line-height:1.3;margin-bottom:1.5rem">"L'accès exclusif aux grandes marques d'optique."</p>
+        <p style="font-size:0.82rem;color:rgba(255,255,255,0.5);line-height:1.7">Chaque samedi, une marque partenaire. Des remises réservées aux membres. Sur invitation uniquement.</p>
+      </div>
+      <p style="font-size:0.72rem;color:rgba(255,255,255,0.3)">o.blink@hotmail.com</p>
+      <div style="position:absolute;right:-60px;top:-60px;width:300px;height:300px;border-radius:50%;border:0.5px solid rgba(184,168,122,0.15)"></div>
+      <div style="position:absolute;right:-20px;top:-20px;width:200px;height:200px;border-radius:50%;border:0.5px solid rgba(184,168,122,0.1)"></div>
+    </div>
+    <!-- Droite : formulaire -->
+    <div class="auth-right">
+      <div class="auth-mobile-logo">Blink <em>Sélect</em></div>
+      <div style="margin-bottom:2rem">
+        <div class="gate-tag">Connexion</div>
+        <h1 style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;margin-top:0.5rem">Bon retour parmi nous</h1>
+        <p style="font-size:0.84rem;color:var(--muted);margin-top:0.5rem">Connectez-vous pour accéder à vos réservations.</p>
+      </div>
+      <div class="form-group" style="margin-bottom:1rem"><label>Email</label><input type="email" id="pl-email" placeholder="marie@email.fr" autocomplete="email"></div>
+      <div class="form-group" style="margin-bottom:0.5rem"><label>Mot de passe</label><input type="password" id="pl-pwd" placeholder="••••••••" autocomplete="current-password"></div>
+      <div style="text-align:right;margin-bottom:1.5rem"><span style="font-size:0.76rem;color:var(--muted);cursor:pointer;text-decoration:underline" onclick="showPage('forgot')">Mot de passe oublié ?</span></div>
+      <div class="auth-error" id="pl-err" style="margin-bottom:1rem">Email ou mot de passe incorrect.</div>
+      <button class="btn-primary" style="width:100%;padding:1rem" onclick="doLoginPage()">Se connecter</button>
+      <p style="text-align:center;margin-top:1.5rem;font-size:0.78rem;color:var(--muted)">Pas encore membre ? <span style="color:var(--charcoal);cursor:pointer;text-decoration:underline" onclick="showPage('register')">Créer un compte</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE MOT DE PASSE OUBLIÉ -->
+<div class="page" id="page-forgot">
+  <div class="auth-page-wrap">
+    <div class="auth-left">
+      <div class="logo" style="color:#fff" onclick="showPage('public');renderPublic()">Blink <em>Sélect</em></div>
+      <div>
+        <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:1.2rem">Sécurité du compte</div>
+        <p style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;color:#fff;line-height:1.3">"Votre accès en toute sécurité."</p>
+      </div>
+      <p style="font-size:0.72rem;color:rgba(255,255,255,0.3)">o.blink@hotmail.com</p>
+      <div style="position:absolute;right:-60px;top:-60px;width:300px;height:300px;border-radius:50%;border:0.5px solid rgba(184,168,122,0.15)"></div>
+    </div>
+    <div class="auth-right">
+      <div class="auth-mobile-logo">Blink <em>Sélect</em></div>
+      <div style="margin-bottom:2rem">
+        <div class="gate-tag">Réinitialisation</div>
+        <h1 style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;margin-top:0.5rem">Mot de passe oublié</h1>
+        <p style="font-size:0.84rem;color:var(--muted);margin-top:0.5rem">Entrez votre email pour recevoir un lien de réinitialisation.</p>
+      </div>
+      <div class="form-group" style="margin-bottom:1.5rem"><label>Email</label><input type="email" id="fp-email" placeholder="marie@email.fr"></div>
+      <div class="msg" id="fp-msg" style="margin-bottom:1rem"></div>
+      <button class="btn-primary" style="width:100%;padding:1rem" onclick="doForgotPage()">Envoyer le lien</button>
+      <p style="text-align:center;margin-top:1.5rem;font-size:0.78rem;color:var(--muted);cursor:pointer" onclick="showPage('login')">← Retour à la connexion</p>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE RDV -->
+<div class="page" id="page-rdv">
+  <div style="max-width:620px;margin:0 auto;padding:2rem">
+    <div id="rdv-stepper" style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:3rem">
+      <div class="step-item active" id="step-1"><span class="step-num">1</span><span class="step-lbl">Événement</span></div>
+      <div class="step-line"></div>
+      <div class="step-item" id="step-2"><span class="step-num">2</span><span class="step-lbl">Créneau</span></div>
+      <div class="step-line"></div>
+      <div class="step-item" id="step-3"><span class="step-num">3</span><span class="step-lbl">Confirmation</span></div>
+    </div>
+    <!-- Étape 1 -->
+    <div id="rdv-step-1">
+      <div style="text-align:center;margin-bottom:2rem">
+        <h1 style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:400">Choisissez un événement</h1>
+        <p style="font-size:0.84rem;color:var(--muted);margin-top:0.5rem">Une réservation par samedi. Plusieurs samedis possibles.</p>
+      </div>
+      <div id="rdv-ventes-list"></div>
+    </div>
+    <!-- Étape 2 -->
+    <div id="rdv-step-2" style="display:none">
+      <div style="margin-bottom:1.5rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem" onclick="goRdvStep(1)"><span style="font-size:0.8rem;color:var(--muted)">← Retour</span></div>
+      <h1 style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:400;margin-bottom:0.3rem" id="rdv-vente-title">—</h1>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.5rem">10h–13h &amp; 14h30–18h30 · Sessions de 30 min</p>
+      <div class="creneaux" id="rdv-creneaux-grid"></div>
+      <div class="msg" id="rdv-msg"></div>
+      <button class="btn-primary" style="margin-top:1.5rem;width:100%;padding:1rem" onclick="goRdvStep(3)">Suivant →</button>
+    </div>
+    <!-- Étape 3 -->
+    <div id="rdv-step-3" style="display:none">
+      <div style="margin-bottom:1.5rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem" onclick="goRdvStep(2)"><span style="font-size:0.8rem;color:var(--muted)">← Retour</span></div>
+      <h1 style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:400;margin-bottom:1.5rem">Confirmer la réservation</h1>
+      <div style="background:#fff;border:0.5px solid var(--border);padding:1.5rem 1.8rem;margin-bottom:1.5rem">
+        <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem">Récapitulatif</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem">
+          <div><div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Membre</div><div style="font-size:0.9rem;font-weight:500;margin-top:0.2rem" id="conf-nom">—</div></div>
+          <div><div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Marque</div><div style="font-size:0.9rem;font-weight:500;margin-top:0.2rem" id="conf-marque">—</div></div>
+          <div><div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Date</div><div style="font-size:0.9rem;font-weight:500;margin-top:0.2rem" id="conf-date">—</div></div>
+          <div><div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Créneau</div><div style="font-size:0.9rem;font-weight:500;margin-top:0.2rem" id="conf-creneau">—</div></div>
+        </div>
+      </div>
+      <button class="btn-primary" style="width:100%;padding:1rem" onclick="submitRdv()">Confirmer ma réservation ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE CONFIRMATION -->
+<div class="page" id="page-confirm">
+  <div style="padding:2rem">
+
+    <!-- VUE EN ATTENTE -->
+    <div id="confirm-pending" class="confirm-card">
+      <div style="width:56px;height:56px;border-radius:50%;background:#fff8e8;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin:0 auto 1.2rem">⏳</div>
+      <h2 style="margin-bottom:0.5rem">Demande en cours d'examen</h2>
+      <p style="margin-bottom:1.5rem">Nous recevons beaucoup de demandes pour cette vente. Notre équipe examine votre dossier et vous confirmera votre place sous <strong>10 à 30 minutes</strong>.</p>
+      <div class="confirm-recap" style="margin-bottom:1.5rem">
+        <div class="confirm-recap-row"><span>Marque</span><span id="cfp-marque">—</span></div>
+        <div class="confirm-recap-row"><span>Date</span><span id="cfp-date">—</span></div>
+        <div class="confirm-recap-row"><span>Créneau demandé</span><span id="cfp-creneau">—</span></div>
+        <div class="confirm-recap-row"><span>Référence</span><span id="cfp-ref">—</span></div>
+      </div>
+      <div style="background:var(--ivory);border:0.5px solid var(--border);padding:1rem 1.2rem;font-size:0.8rem;color:var(--muted);line-height:1.7;margin-bottom:1.5rem;text-align:left">
+        📧 Vous recevrez un email de confirmation à <strong id="cfp-email">—</strong> dès que votre demande sera acceptée. Pensez à vérifier vos spams.
+      </div>
+      <button class="nav-btn outline" style="width:100%;padding:0.9rem;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase" onclick="enterClient()">Voir mes réservations</button>
+    </div>
+
+    <!-- VUE ACCEPTÉE -->
+    <div id="confirm-accepted" class="confirm-card" style="display:none">
+      <div class="check-circle" style="background:#eaf4ee;color:var(--success)">✓</div>
+      <h2 style="color:var(--success);margin-bottom:0.5rem">Félicitations, vous êtes accepté !</h2>
+      <p style="margin-bottom:1.5rem">Votre place est confirmée. Présentez votre ticket à l'entrée de la vente privée.</p>
+      <div class="confirm-recap" style="margin-bottom:1.5rem">
+        <div class="confirm-recap-row"><span>Marque</span><span id="cfp-marque2">—</span></div>
+        <div class="confirm-recap-row"><span>Date</span><span id="cfp-date2">—</span></div>
+        <div class="confirm-recap-row"><span>Créneau</span><span id="cfp-creneau2">—</span></div>
+        <div class="confirm-recap-row"><span>Référence</span><span id="cfp-ref2">—</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.8rem">
+        <button class="btn-primary" style="width:100%;padding:0.9rem" onclick="downloadTicketFromConfirm()">↓ Télécharger mon ticket PDF</button>
+        <button class="nav-btn outline" style="width:100%;padding:0.9rem;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase" onclick="enterClient()">Voir mes réservations</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PAGE CLIENT -->
+<div class="page" id="page-client">
+  <div class="client-wrap">
+    <div class="client-header">
+      <div><h1>Bonjour, <span id="client-name">—</span></h1><p>Voici vos réservations Blink Sélect</p></div>
+      <button class="btn-primary" style="font-size:0.7rem;padding:0.6rem 1.2rem" onclick="showPage('rdv');renderRdvPage()">+ Nouvelle réservation</button>
+    </div>
+    <div id="client-reservations"></div>
+  </div>
+</div>
+
+<!-- PAGE ADMIN -->
+<div class="page" id="page-admin">
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div>
+        <h4>Dashboard</h4>
+        <div class="sidebar-item active" onclick="showAdminPanel('dashboard',this)">Vue d'ensemble</div>
+        <div class="sidebar-item" onclick="showAdminPanel('tracker',this)">Visiteurs</div>
+        <h4 style="margin-top:1.5rem">Gestion</h4>
+        <div class="sidebar-item" onclick="showAdminPanel('ventes',this)">Ventes privées</div>
+        <div class="sidebar-item" onclick="showAdminPanel('creneaux',this)">Créneaux</div>
+        <div class="sidebar-item" onclick="showAdminPanel('inscrits',this)">Inscrits</div>
+        <div class="sidebar-item" onclick="showAdminPanel('reservations',this)">Réservations</div>
+        <div class="sidebar-item" onclick="showAdminPanel('contenu',this)">Contenu du site</div>
+        <div class="sidebar-item" onclick="showAdminPanel('mailing',this)">📧 Mailing</div>
+      </div>
+      <div style="padding:1.5rem"><button class="nav-btn outline" style="width:100%" onclick="logout()">Déconnexion</button></div>
+    </aside>
+    <main class="admin-content">
+      <!-- DASHBOARD -->
+      <div class="admin-panel active" id="panel-dashboard">
+        <h2>Vue d'ensemble</h2>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="s-label">Membres inscrits</div><div class="s-num" id="stat-membres">0</div></div>
+          <div class="stat-card"><div class="s-label">Réservations confirmées</div><div class="s-num" id="stat-resas">0</div></div>
+          <div class="stat-card"><div class="s-label">Ventes programmées</div><div class="s-num" id="stat-ventes">0</div></div>
+        </div>
+        <div class="stats-grid" id="stats-extra" style="margin-top:-0.5rem"></div>
+        <div class="edit-card" style="margin-bottom:1.5rem">
+          <h4>Occupation par vente</h4>
+          <div id="ventes-stats"></div>
+        </div>
+        <h2 style="font-size:1.2rem;margin-bottom:1rem">Dernières réservations</h2>
+        <table class="admin-table"><thead><tr><th>Nom</th><th>Email</th><th>Marque</th><th>Créneau</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="dash-tbody"></tbody></table>
+      </div>
+      <!-- VISITEURS -->
+      <div class="admin-panel" id="panel-tracker">
+        <h2>Visiteurs</h2>
+        <div style="background:#fff;border:0.5px solid var(--border);padding:3rem 2rem;text-align:center">
+          <div style="font-size:2rem;margin-bottom:1rem">📊</div>
+          <p style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:400;margin-bottom:0.6rem">Disponible après publication</p>
+          <p style="font-size:0.83rem;color:var(--muted);max-width:400px;margin:0 auto 1.5rem;line-height:1.7">Les statistiques de visites seront actives une fois le site publié sur Vercel avec Firebase connecté.</p>
+          <div style="display:inline-block;background:var(--ivory);border:0.5px solid var(--border);padding:0.6rem 1.2rem;font-size:0.75rem;letter-spacing:0.08em;color:var(--muted)">Google Analytics · Firebase</div>
+        </div>
+      </div>
+      <!-- VENTES -->
+      <div class="admin-panel" id="panel-ventes">
+        <h2>Ventes privées</h2>
+        <button class="add-btn" onclick="openAddVenteModal()">+ Ajouter une vente</button>
+        <div id="ventes-list"></div>
+      </div>
+      <!-- CRÉNEAUX -->
+      <div class="admin-panel" id="panel-creneaux">
+        <h2>Créneaux</h2>
+        <div class="edit-card">
+          <h4>Gérer les créneaux <button class="tbl-btn" onclick="addCreneau()">+ Ajouter</button></h4>
+          <div id="creneaux-admin"></div>
+          <button class="btn-primary" onclick="saveCreneaux()">Enregistrer</button>
+        </div>
+      </div>
+      <!-- INSCRITS -->
+      <div class="admin-panel" id="panel-inscrits">
+        <h2>Inscrits</h2>
+        <div class="search-bar">
+          <input type="text" id="search-inscrits" placeholder="Rechercher par nom, email, téléphone…" oninput="filterInscrits()">
+          <button class="tbl-btn" onclick="exportCSV()">↓ Exporter CSV</button>
+        </div>
+        <table class="admin-table"><thead><tr><th>Nom</th><th>Email</th><th>Tél</th><th>Newsletter</th><th>Actions</th></tr></thead><tbody id="inscrits-tbody"></tbody></table>
+      </div>
+      <!-- RÉSERVATIONS -->
+      <div class="admin-panel" id="panel-reservations">
+        <h2>Réservations</h2>
+        <div class="search-bar">
+          <input type="text" id="search-resas" placeholder="Rechercher…" oninput="filterResas()">
+        </div>
+        <table class="admin-table"><thead><tr><th>Membre</th><th>Marque</th><th>Date</th><th>Créneau</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="resas-tbody"></tbody></table>
+      </div>
+      <!-- CONTENU -->
+      <div class="admin-panel" id="panel-contenu">
+        <h2>Contenu du site</h2>
+        <div class="edit-card">
+          <h4>Section Hero</h4>
+          <div class="form-grid" style="gap:1rem">
+            <div class="form-group full"><label>Tag</label><input type="text" id="c-tag" value="Ventes privées — Chaque samedi"></div>
+            <div class="form-group full"><label>Titre</label><input type="text" id="c-title" value="L'accès exclusif aux grandes marques d'optique"></div>
+            <div class="form-group full"><label>Description</label><textarea id="c-desc" rows="3">Chaque samedi, une marque partenaire. Des remises réservées aux membres inscrits. Sur invitation uniquement.</textarea></div>
+          </div>
+          <button class="btn-primary" onclick="saveContenu()">Appliquer</button>
+        </div>
+        <div class="edit-card" style="margin-top:1.2rem">
+          <h4>Compteur hero</h4>
+          <div class="form-grid" style="gap:1rem">
+            <div class="form-group"><label>Marque</label><input type="text" id="c-cd-brand" value="Silhouette"></div>
+            <div class="form-group"><label>Remise</label><input type="text" id="c-cd-discount" value="Jusqu'à −40%"></div>
+            <div class="form-group"><label>Places restantes</label><input type="number" id="c-cd-places" value="18" min="0"></div>
+            <div class="form-group"><label>Capacité totale</label><input type="number" id="c-cd-total" value="40" min="1"></div>
+            <div class="form-group full"><label>Label date</label><input type="text" id="c-cd-label" value="Prochaine vente — Samedi 21 juin"></div>
+          </div>
+          <button class="btn-primary" onclick="saveCompteur()">Appliquer</button>
+        </div>
+        <div class="edit-card" style="margin-top:1.2rem">
+          <h4>Photos du carrousel <button class="tbl-btn" onclick="document.getElementById('photo-upload').click()">+ Ajouter</button></h4>
+          <input type="file" id="photo-upload" accept="image/*" multiple style="display:none" onchange="addCarouselPhotos(event)">
+          <div id="photos-admin-list" style="display:flex;flex-wrap:wrap;gap:0.8rem;margin-top:0.8rem"></div>
+          <p style="font-size:0.75rem;color:var(--muted);margin-top:0.8rem">Les photos s'affichent en défilement automatique sur la page d'accueil des membres.</p>
+        </div>
+        <div class="edit-card" style="margin-top:1.2rem">
+          <h4>Gestion des réservations</h4>
+          <div style="display:flex;align-items:center;gap:1rem;padding:0.8rem 0">
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-auto-accept" onchange="saveAutoAccept()">
+              <span class="toggle-slider"></span>
+            </label>
+            <div>
+              <div style="font-size:0.85rem;font-weight:500;color:var(--charcoal)" id="auto-accept-label">Acceptation manuelle</div>
+              <div style="font-size:0.75rem;color:var(--muted)">Vous recevez un mail pour chaque demande et vous acceptez depuis le panel</div>
+            </div>
+          </div>
+        </div>
+      <!-- PANEL MAILING -->
+      <div class="admin-panel" id="panel-mailing">
+        <h2>Mailing clients</h2>
+        <div class="edit-card">
+          <h4>Rédiger un email</h4>
+          <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1.2rem">Envoi aux membres qui <strong>n'ont pas</strong> coché "Je ne souhaite pas recevoir les invitations".</p>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label>Objet de l'email</label>
+            <input type="text" id="mail-subject" placeholder="Ex: Nouvelle vente privée Silhouette ce samedi !">
+          </div>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label>Message</label>
+            <textarea id="mail-body" rows="8" style="resize:vertical" placeholder="Rédigez votre message ici..."></textarea>
+          </div>
+          <div id="mail-preview-wrap" style="display:none;margin-bottom:1rem">
+            <h4 style="font-size:0.8rem;margin-bottom:0.6rem">Aperçu</h4>
+            <div id="mail-preview" style="border:1px solid var(--border);padding:1.2rem;font-size:0.83rem;line-height:1.7;background:var(--ivory);white-space:pre-wrap"></div>
+          </div>
+          <div id="mail-send-info" style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem"></div>
+          <div class="msg" id="mail-msg" style="margin-bottom:1rem"></div>
+          <div style="display:flex;gap:0.8rem;flex-wrap:wrap">
+            <button class="tbl-btn" onclick="previewMailing()">👁 Aperçu</button>
+            <button class="btn-primary" style="font-size:0.78rem;padding:0.7rem 1.5rem" onclick="sendMailing()">Envoyer à tous les abonnés →</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- MODAL NOUVELLE VENTE -->
+<div class="overlay" id="overlay-vente">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-close" onclick="closeVenteModal()">✕</button>
+    <h3 id="vente-modal-title">Nouvelle vente privée</h3>
+    <p class="sub">Renseignez les informations de l'événement</p>
+    <div class="form-group" style="margin-bottom:1rem">
+      <label>Marque <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="vm-marque" placeholder="Ex: Silhouette, Lindberg..." autocomplete="off">
+    </div>
+    <div class="form-group" style="margin-bottom:1rem">
+      <label>Remise <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="vm-remise" placeholder="Ex: −40%" autocomplete="off">
+    </div>
+    <div class="form-group" style="margin-bottom:1.5rem">
+      <label>Date de l'événement <span style="color:var(--danger)">*</span></label>
+      <input type="date" id="vm-date" style="cursor:pointer" onchange="updateVmDateDisplay()">
+      <div id="vm-date-display" style="font-size:0.78rem;color:var(--muted);margin-top:0.4rem"></div>
+    </div>
+    <div class="msg" id="vm-msg" style="margin-bottom:1rem"></div>
+    <input type="hidden" id="vm-edit-id">
+    <button class="btn-primary" style="width:100%;padding:1rem" onclick="saveVenteModal()">Enregistrer la vente</button>
+  </div>
+</div>
+
+<!-- MODAL AUTH -->
+<div class="overlay" id="overlay-auth">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAuth()">✕</button>
+    <div id="form-login">
+      <h3>Mon espace</h3>
+      <p class="sub">Connectez-vous à votre compte</p>
+      <div class="form-group"><label>Email</label><input type="email" id="l-email" placeholder="marie@email.fr"></div>
+      <div class="form-group"><label>Mot de passe</label><input type="password" id="l-pwd" placeholder="••••••••"></div>
+      <div class="auth-error" id="login-err">Email ou mot de passe incorrect.</div>
+      <button class="btn-primary" onclick="doLogin()">Se connecter</button>
+      <div style="text-align:center;margin-top:0.8rem"><span style="font-size:0.76rem;color:var(--charcoal);cursor:pointer;text-decoration:underline" onclick="openForgotPwd()">Mot de passe oublié ?</span></div>
+      <div class="switch-auth">Pas encore membre ? <span onclick="closeAuth();showPage('register')">Créer un compte</span></div>
+    </div>
+    <div id="form-forgot" style="display:none">
+      <h3>Mot de passe oublié</h3>
+      <p class="sub">Entrez votre email pour recevoir un lien de réinitialisation.</p>
+      <div class="form-group"><label>Email</label><input type="email" id="forgot-email" placeholder="marie@email.fr"></div>
+      <div class="msg" id="forgot-msg"></div>
+      <button class="btn-primary" onclick="doForgotPwd()">Envoyer le lien</button>
+      <div class="switch-auth"><span onclick="switchAuth('login')">← Retour à la connexion</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MON COMPTE -->
+<div class="overlay" id="overlay-compte">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('overlay-compte').classList.remove('active')">✕</button>
+    <h3>Mon compte</h3>
+    <p class="sub">Modifier vos informations personnelles</p>
+    <div class="form-group" style="margin-bottom:1rem"><label>Prénom</label><input type="text" id="mc-prenom"></div>
+    <div class="form-group" style="margin-bottom:1rem"><label>Nom</label><input type="text" id="mc-nom"></div>
+    <div class="form-group" style="margin-bottom:1rem"><label>Téléphone</label><input type="tel" id="mc-tel"></div>
+    <div class="form-group" style="margin-bottom:1rem"><label>Nouveau mot de passe <span style="font-size:0.65rem;color:var(--muted)">(vide = inchangé)</span></label><input type="password" id="mc-pwd" placeholder="••••••••"></div>
+    <div class="form-group" style="margin-bottom:1rem"><label>Mot de passe actuel <span style="font-size:0.65rem;color:var(--muted)">(requis pour changer)</span></label><input type="password" id="mc-pwd-actuel" placeholder="••••••••"></div>
+    <div class="form-group" style="margin-bottom:1rem"><label>Confirmer nouveau mot de passe</label><input type="password" id="mc-pwd2" placeholder="••••••••"></div>
+    <div class="auth-error" id="mc-err"></div>
+    <div class="msg success" id="mc-ok">Informations mises à jour ✓</div>
+    <button class="btn-primary" onclick="saveMonCompte()">Enregistrer</button>
+    <div style="margin-top:1.2rem;text-align:center"><span style="font-size:0.78rem;color:var(--danger);cursor:pointer;text-decoration:underline" onclick="confirmDeleteAccount()">Supprimer mon compte</span></div>
+  </div>
+</div>
+
+<!-- MODAL CGV -->
+<div class="overlay" id="overlay-cgv">
+  <div class="modal" style="max-width:580px">
+    <button class="modal-close" onclick="document.getElementById('overlay-cgv').classList.remove('active')">✕</button>
+    <h3>Conditions Générales de Vente</h3>
+    <p class="sub">Blink Sélect — Ventes privées</p>
+    <div style="font-size:0.82rem;color:var(--muted);line-height:1.8">
+      <p style="font-weight:500;color:var(--charcoal);margin-bottom:0.4rem">1. Objet</p>
+      <p style="margin-bottom:1rem">Les présentes CGV régissent l'accès aux ventes privées organisées par Blink Sélect, réservées aux membres inscrits.</p>
+      <p style="font-weight:500;color:var(--charcoal);margin-bottom:0.4rem">2. Inscription et réservation</p>
+      <p style="margin-bottom:1rem">L'inscription est gratuite. La réservation est nominative et non transférable. En cas d'absence, le créneau est libéré sans remboursement.</p>
+      <p style="font-weight:500;color:var(--charcoal);margin-bottom:0.4rem">3. Remises et tarifs</p>
+      <p style="margin-bottom:1rem">Les remises sont valables uniquement durant la vente correspondante, dans la limite des stocks. Non cumulables avec d'autres offres.</p>
+      <p style="font-weight:500;color:var(--charcoal);margin-bottom:0.4rem">4. Données personnelles (RGPD)</p>
+      <p style="margin-bottom:1rem">Vos données ne sont jamais revendues. Vous disposez d'un droit d'accès, rectification et suppression à : o.blink@hotmail.com</p>
+      <p style="font-weight:500;color:var(--charcoal);margin-bottom:0.4rem">5. Annulation</p>
+      <p style="margin-bottom:1rem">Blink Sélect peut annuler ou reporter une vente. Les membres seront informés par email.</p>
+      <p style="font-weight:500;color:var(--charcoal);margin-bottom:0.4rem">6. Contact</p>
+      <p>o.blink@hotmail.com</p>
+    </div>
+    <button class="btn-primary" style="width:100%;margin-top:1.5rem" onclick="document.getElementById('overlay-cgv').classList.remove('active')">Fermer</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBOc8Ye1ZzkXeb5i_mcrXIbzlKZJzRcn-Y",
+  authDomain: "blinkselect.firebaseapp.com",
+  projectId: "blinkselect",
+  storageBucket: "blinkselect.firebasestorage.app",
+  messagingSenderId: "421124986107",
+  appId: "1:421124986107:web:72cd597e6eb07bee6b0c5e"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+window._db = db;
+window._auth = auth;
+window._firebase = { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs };
+window._firebaseAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential, sendPasswordResetEmail };
+
+// ── INIT : charger toutes les données depuis Firestore ──
+async function loadFromFirestore() {
+  const F = window._firebase;
+  try {
+    // SITE
+    const siteSnap = await F.getDoc(F.doc(db, 'config', 'site'));
+    if (siteSnap.exists()) Object.assign(DB.site, siteSnap.data());
+
+    // VENTES
+    const ventesSnap = await F.getDocs(F.collection(db, 'ventes'));
+    if (!ventesSnap.empty) {
+      DB.ventes = ventesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } else {
+      for (const v of DB.ventes) {
+        await F.setDoc(F.doc(db, 'ventes', String(v.id)), { marque: v.marque, date: v.date, remise: v.remise });
+      }
+    }
+
+    // CRENEAUX
+    const creneauxSnap = await F.getDoc(F.doc(db, 'config', 'creneaux'));
+    if (creneauxSnap.exists()) DB.creneaux = creneauxSnap.data().list;
+
+    // RESERVATIONS
+    const resasSnap = await F.getDocs(F.collection(db, 'reservations'));
+    if (!resasSnap.empty) DB.reservations = resasSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // USERS (pour panel admin)
+    const usersSnap = await F.getDocs(F.collection(db, 'users'));
+    if (!usersSnap.empty) DB.users = usersSnap.docs.map(d => ({ id: d.id, ...d.data(), role: 'client' }));
+
+  } catch(e) { console.warn('Firebase load error:', e); }
+
+  // Rafraîchir l'affichage après chargement complet
+  renderPublic();
+}
+
+// isRegistering est défini dans le script principal
+window._isRegistering = false;
+
+window._saveUser = async (user) => {
+  const F = window._firebase;
+  const { id, ...data } = user;
+  await F.setDoc(F.doc(db, 'users', id), data);
+};
+window._deleteUser = async (id) => {
+  const F = window._firebase;
+  await F.deleteDoc(F.doc(db, 'users', id));
+};
+window._saveResa = async (resa) => {
+  const F = window._firebase;
+  const { id, ...data } = resa;
+  await F.setDoc(F.doc(db, 'reservations', id), data);
+};
+window._updateResa = async (id, data) => {
+  const F = window._firebase;
+  await F.updateDoc(F.doc(db, 'reservations', id), data);
+};
+window._deleteResa = async (id) => {
+  const F = window._firebase;
+  await F.deleteDoc(F.doc(db, 'reservations', id));
+};
+window._saveVente = async (vente) => {
+  const F = window._firebase;
+  const { id, ...data } = vente;
+  await F.setDoc(F.doc(db, 'ventes', String(id)), data);
+};
+window._deleteVente = async (id) => {
+  const F = window._firebase;
+  await F.deleteDoc(F.doc(db, 'ventes', String(id)));
+};
+window._saveCreneaux = async (list) => {
+  const F = window._firebase;
+  await F.setDoc(F.doc(db, 'config', 'creneaux'), { list });
+};
+window._saveSite = async (siteData) => {
+  const F = window._firebase;
+  await F.setDoc(F.doc(db, 'config', 'site'), siteData, { merge: true });
+};
+
+// Attendre que le script principal soit chargé avant d'initialiser
+window.addEventListener('load', () => {
+  onAuthStateChanged(auth, async (firebaseUser) => {
+    await loadFromFirestore();
+    if (firebaseUser) {
+      if(window.isRegistering) return;
+      if (firebaseUser.email === 'optical.blink@gmail.com') {
+        window.currentUser = { id: firebaseUser.uid, prenom: 'Admin', role: 'admin', email: firebaseUser.email };
+        if(typeof closeGate==='function')closeGate();
+        if(typeof updateNav==='function')updateNav('admin');
+        if(typeof enterAdmin==='function')enterAdmin();
+        return;
+      }
+      const F = window._firebase;
+      try {
+        const snap = await F.getDoc(F.doc(db, 'users', firebaseUser.uid));
+        if (snap.exists()) {
+          window.currentUser = { id: firebaseUser.uid, ...snap.data(), role: 'client' };
+          if(typeof closeGate==='function')closeGate();
+          if(typeof updateNav==='function')updateNav('client');
+          if(typeof enterClient==='function')enterClient();
+          return;
+        }
+      } catch(e) { console.warn('Profile load error:', e); }
+    }
+    window.currentUser = null;
+    if(typeof renderPublic==='function')renderPublic();
+    document.getElementById('app-loader')?.remove();
+  });
+});
+// ══════════════════════════════════════
+const DB = {
+  site:{tag:'Ventes privées — Chaque samedi',title:"L'accès exclusif aux grandes marques d'optique",desc:'Chaque samedi, une marque partenaire. Des remises réservées aux membres inscrits. Sur invitation uniquement.',cd:{brand:'Silhouette',discount:"Jusqu'à −40%",label:'Prochaine vente — Samedi 21 juin',places:18,total:40},photos:[],autoAccept:false},
+  ventes:[{id:1,marque:'Silhouette',date:'Samedi 21 juin 2025',remise:'−40%'},{id:2,marque:'Lindberg',date:'Samedi 28 juin 2025',remise:'−35%'},{id:3,marque:'ic! Berlin',date:'Samedi 5 juillet 2025',remise:'−45%'}],
+  creneaux:[{heure:'10h00',complet:false},{heure:'10h30',complet:false},{heure:'11h00',complet:false},{heure:'11h30',complet:false},{heure:'12h00',complet:false},{heure:'12h30',complet:false},{heure:'14h30',complet:false},{heure:'15h00',complet:false},{heure:'15h30',complet:false},{heure:'16h00',complet:false},{heure:'16h30',complet:false},{heure:'17h00',complet:false},{heure:'17h30',complet:false},{heure:'18h00',complet:false},{heure:'18h30',complet:false}],
+  users:[{id:'u1',prenom:'Marie',nom:'Dupont',email:'marie@test.fr',pwd:'test123',role:'client',tel:'06 11 22 33 44',newsletter:true}],
+  reservations:[{id:'r1',userId:'u1',prenom:'Marie',nom:'Dupont',email:'marie@test.fr',marque:'Silhouette',creneau:'10h00',date:'Samedi 21 juin 2025',status:'confirmed'}],
+  nextId:20
+};
+let currentUser=null,selectedCreneau=null,selectedVenteId=null,lastConfirm=null;
+
+// ══════════════════════════════════════
+// PAGES & NAV
+// ══════════════════════════════════════
+function showPage(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');window.scrollTo(0,0);}
+function goHome(){showPage('public');renderPublic();}
+
+function updateNav(role){
+  const nav=document.querySelector('nav');
+  const nl=document.getElementById('nav-links');
+  if(!role){
+    nav.style.display='none';
+  } else if(role==='client'){
+    nav.style.display='';
+    nav.style.display='';
+    nl.innerHTML=`<a onclick="enterClient()">Mes réservations</a><div class="account-menu-wrap"><button class="nav-btn outline" onclick="toggleAccountMenu()">Mon compte ▾</button><div class="account-dropdown" id="account-dropdown"><div class="account-item" onclick="goHome()">Accueil</div><div class="account-item" onclick="openMonCompte()">Modifier mes infos</div><div class="account-item danger" onclick="logout()">Déconnexion</div></div></div>`;
   } else {
-    return res.status(400).json({ error: 'Type inconnu' });
+    nav.style.display='';
+    nl.innerHTML=`<a onclick="goHome()">Voir le site</a><button class="nav-btn" onclick="enterAdmin()">Admin</button><button class="nav-btn outline" onclick="logout()">Déconnexion</button>`;
+  }
+}
+
+// ══════════════════════════════════════
+// GATE
+// ══════════════════════════════════════
+function showGate(){const g=document.getElementById('site-gate');if(g)g.style.display='flex';}
+function closeGate(){const g=document.getElementById('site-gate');if(g)g.style.display='none';}
+
+// ══════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════
+function updateTimer(){const now=new Date(),next=new Date(now),d=now.getDay()===6?7:(6-now.getDay());next.setDate(now.getDate()+d);next.setHours(10,0,0,0);let diff=Math.max(0,next-now);const dd=Math.floor(diff/86400000);diff-=dd*86400000;const hh=Math.floor(diff/3600000);diff-=hh*3600000;const mm=Math.floor(diff/60000);diff-=mm*60000;const ss=Math.floor(diff/1000);
+  const pad=n=>String(n).padStart(2,'0');
+  ['days','days2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=pad(dd);});
+  ['hours','hours2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=pad(hh);});
+  ['mins','mins2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=pad(mm);});
+  ['secs','secs2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=pad(ss);});
+}
+updateTimer();setInterval(updateTimer,1000);
+
+// ══════════════════════════════════════
+// RENDER PUBLIC
+// ══════════════════════════════════════
+function renderPublic(){
+  const s=DB.site;
+  // Compteur guest
+  document.getElementById('hero-tag').textContent=s.tag;
+  document.getElementById('hero-title').textContent=s.title;
+  document.getElementById('hero-desc').textContent=s.desc;
+  document.getElementById('cd-brand').textContent=s.cd.brand;
+  document.getElementById('cd-discount').textContent=s.cd.discount;
+  document.getElementById('cd-label').textContent=s.cd.label;
+  // Compteur réel : calculer depuis les réservations
+  const venteActive=DB.ventes.find(v=>v.marque===s.cd.brand)||DB.ventes[0];
+  if(venteActive){
+    const p=getPlacesReelles(venteActive.id);
+    document.getElementById('cd-places').textContent=p.restantes+' places restantes';
+    document.getElementById('cd-total').textContent=p.total;
+  } else {
+    document.getElementById('cd-places').textContent=s.cd.places+' places restantes';
+    document.getElementById('cd-total').textContent=s.cd.total;
+  }
+  // Toggle vues
+  const isLogged=currentUser&&currentUser.role==='client';
+  document.getElementById('hero-guest').style.display=isLogged?'none':'';
+  document.getElementById('hero-member').style.display=isLogged?'block':'none';
+  if(isLogged){
+    document.getElementById('home-prenom').textContent=currentUser.prenom||'';
+    renderCarousel();
+    // Compteur membre
+    document.getElementById('cd-brand2').textContent=s.cd.brand;
+    document.getElementById('cd-discount2').textContent=s.cd.discount;
+    document.getElementById('cd-label2').textContent=s.cd.label;
+    const venteActive2=DB.ventes.find(v=>v.marque===s.cd.brand)||DB.ventes[0];
+    if(venteActive2){
+      const p2=getPlacesReelles(venteActive2.id);
+      document.getElementById('cd-places2').textContent=p2.restantes+' places restantes';
+      document.getElementById('cd-total2').textContent=p2.total;
+    } else {
+      document.getElementById('cd-places2').textContent=s.cd.places+' places restantes';
+      document.getElementById('cd-total2').textContent=s.cd.total;
+    }
+    // Événements
+    document.getElementById('home-events').innerHTML=DB.ventes.map(v=>{
+      const deja=DB.reservations.find(r=>r.userId===currentUser.id&&r.date===v.date&&r.status==='confirmed');
+      return `<div class="event-card" style="margin-bottom:0.8rem">
+        <div class="event-card-info">
+          <h3>${v.marque}</h3>
+          <div class="event-meta">
+            <div class="event-meta-item">Date<strong>${v.date}</strong></div>
+            <div class="event-meta-item">Remise<strong>${v.remise}</strong></div>
+          </div>
+        </div>
+        ${deja
+          ?'<span style="font-size:0.72rem;color:var(--success);border:0.5px solid var(--success);padding:0.4rem 0.8rem">✓ Réservé</span>'
+          :`<button class="btn-primary" style="white-space:nowrap;font-size:0.7rem;padding:0.7rem 1.4rem" onclick="selectEventFromHome(${v.id})">Réserver →</button>`
+        }
+      </div>`;
+    }).join('');
+  }
+}
+
+function selectEventFromHome(id){
+  selectedVenteId=id;
+  const v=DB.ventes.find(x=>String(x.id)===String(id));
+  document.getElementById('rdv-vente-title').textContent=v.marque+' — '+v.date;
+  document.getElementById('rdv-creneaux-grid').innerHTML=buildCreneauxGrid(id);
+  selectedCreneau=null;
+  showPage('rdv');
+  goRdvStep(2);
+}
+
+// ══════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════
+function openAuth(m){
+  document.getElementById('overlay-auth').classList.add('active');
+  switchAuth(m);
+  // Fond propre : masquer la page publique derrière
+  }
+function closeAuth(){
+  document.getElementById('overlay-auth').classList.remove('active');
   }
 
-  const payload = JSON.stringify({
-    sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-    to: [{ email: to, name: prenom }],
-    subject,
-    htmlContent
-  });
+function switchAuth(m){
+  document.getElementById('form-login').style.display=m==='login'?'block':'none';
+  document.getElementById('form-forgot').style.display=m==='forgot'?'block':'none';
+  document.getElementById('login-err').style.display='none';
+}
+function openForgotPwd(){switchAuth('forgot');}
 
-  const options = {
-    hostname: 'api.brevo.com',
-    path: '/v3/smtp/email',
-    method: 'POST',
-    headers: {
-      'accept': 'application/json',
-      'api-key': API_KEY,
-      'content-type': 'application/json',
-      'content-length': Buffer.byteLength(payload)
-    }
-  };
+async function doLoginPage(){
+  const email=document.getElementById('pl-email').value.trim().toLowerCase();
+  const pwd=document.getElementById('pl-pwd').value;
+  const errEl=document.getElementById('pl-err');
+  errEl.style.display='none';
+  try {
+    await window._firebaseAuth.signInWithEmailAndPassword(window._auth, email, pwd);
+    closeGate();
+  } catch(e) {
+    errEl.style.display='block';
+  }
+}
 
-  return new Promise((resolve) => {
-    const request = https.request(options, (response) => {
-      let data = '';
-      response.on('data', chunk => data += chunk);
-      response.on('end', () => {
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          res.status(200).json({ success: true });
-        } else {
-          res.status(response.statusCode).json({ error: data });
-        }
-        resolve();
+async function doForgotPage(){
+  const email=document.getElementById('fp-email').value.trim().toLowerCase();
+  if(!email)return;
+  try {
+    await window._firebaseAuth.sendPasswordResetEmail(window._auth, email);
+    showMsg('fp-msg','success','Lien de réinitialisation envoyé à '+email+'.');
+  } catch(e) {
+    showMsg('fp-msg','error','Aucun compte trouvé avec cet email.');
+  }
+}
+
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim().toLowerCase();
+  const pwd=document.getElementById('l-pwd').value;
+  document.getElementById('login-err').style.display='none';
+  try {
+    await window._firebaseAuth.signInWithEmailAndPassword(window._auth, email, pwd);
+    closeAuth();closeGate();
+  } catch(e) {
+    document.getElementById('login-err').style.display='block';
+  }
+}
+
+async function doForgotPwd(){
+  const email=document.getElementById('forgot-email').value.trim().toLowerCase();
+  if(!email)return;
+  try {
+    await window._firebaseAuth.sendPasswordResetEmail(window._auth, email);
+    showMsg('forgot-msg','success','Lien de réinitialisation envoyé à '+email+'.');
+  } catch(e) {
+    showMsg('forgot-msg','error','Aucun compte trouvé avec cet email.');
+  }
+}
+
+async function logout(){
+  await window._firebaseAuth.signOut(window._auth);
+  currentUser=null;updateNav(null);showPage('public');renderPublic();
+  showGate();
+}
+
+// ══════════════════════════════════════
+// REGISTER PAGE
+// ══════════════════════════════════════
+// Stockage temporaire pendant vérification
+let pendingUser=null;
+let verifyCode=null;
+let verifyExpiry=null;
+let lastVerifySent=0; // cooldown 30s
+
+function validateEmail(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+function validateTel(tel){
+  if(!tel)return true; // optionnel
+  const clean=tel.replace(/[\s.\-()]/g,'');
+  return /^(\+33|0033|0)[1-9][0-9]{8}$/.test(clean);
+}
+function formatTel(tel){
+  const clean=tel.replace(/[\s.\-()]/g,'');
+  const n=clean.startsWith('+33')?'0'+clean.slice(3):clean.startsWith('0033')?'0'+clean.slice(4):clean;
+  return n.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
+}
+
+function submitRegisterPage(){
+  const prenom=document.getElementById('r2-prenom').value.trim();
+  const nom=document.getElementById('r2-nom').value.trim();
+  const email=document.getElementById('r2-email').value.trim().toLowerCase();
+  const email2=document.getElementById('r2-email2').value.trim().toLowerCase();
+  const tel=document.getElementById('r2-tel').value.trim();
+  const pwd=document.getElementById('r2-pwd').value;
+  const pwd2=document.getElementById('r2-pwd2').value;
+  if(!prenom||!nom||!email||!pwd)return showMsg('r2-msg','error','Merci de remplir tous les champs obligatoires.');
+  if(!validateEmail(email))return showMsg('r2-msg','error','Adresse email invalide (ex: nom@domaine.fr).');
+  if(email!==email2)return showMsg('r2-msg','error','Les adresses email ne correspondent pas.');
+  if(pwd.length<6)return showMsg('r2-msg','error','Le mot de passe doit contenir au moins 6 caractères.');
+  if(pwd!==pwd2)return showMsg('r2-msg','error','Les mots de passe ne correspondent pas.');
+  if(!document.getElementById('r2-cgv').checked)return showMsg('r2-msg','error','Vous devez accepter les CGV.');
+  if(!document.getElementById('r2-rgpd').checked)return showMsg('r2-msg','error','Vous devez accepter la politique de confidentialité (RGPD).');
+  if(tel&&!validateTel(tel))return showMsg('r2-msg','error','Numéro de téléphone invalide (format français requis, ex: 06 12 34 56 78).');
+  if(DB.users.find(u=>u.email===email))return showMsg('r2-msg','error','Cette adresse email est déjà utilisée.');
+  const telFormatted=tel?formatTel(tel):'';
+  if(telFormatted&&DB.users.find(u=>u.tel&&u.tel.replace(/ /g,'')===telFormatted.replace(/ /g,'')))return showMsg('r2-msg','error','Ce numéro de téléphone est déjà utilisé.');
+  // Cooldown 30s
+  const now=Date.now();
+  if(now-lastVerifySent<30000)return showMsg('r2-msg','error','Veuillez patienter '+(Math.ceil((30000-(now-lastVerifySent))/1000))+' secondes avant de renvoyer un code.');
+  lastVerifySent=now;
+  pendingUser={prenom,nom,email,pwd,tel:telFormatted,newsletter:!document.getElementById('r2-mail').checked,rgpdConsent:true,rgpdDate:new Date().toISOString()};
+  verifyCode=String(Math.floor(100000+Math.random()*900000));
+  verifyExpiry=Date.now()+10*60*1000;
+  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'verification',to:email,prenom,code:verifyCode})}).catch(()=>{});
+  document.getElementById('verify-email-display').textContent=email;
+  document.querySelectorAll('.otp-box').forEach(b=>{b.value='';b.classList.remove('filled');});
+  showMsg('verify-msg','','');
+  showPage('verify');
+  setTimeout(()=>{const f=document.querySelector('.otp-box');if(f)f.focus();},100);
+}
+
+async function submitVerifyCode(){
+  const boxes=document.querySelectorAll('.otp-box');
+  const input=Array.from(boxes).map(b=>b.value).join('').trim();
+  if(!pendingUser)return showMsg('verify-msg','error','Session expirée. Recommencez l\'inscription.');
+  if(Date.now()>verifyExpiry)return showMsg('verify-msg','error','Code expiré. Demandez un nouveau code.');
+  if(input!==verifyCode)return showMsg('verify-msg','error','Code incorrect. Vérifiez votre email.');
+  try {
+    window.isRegistering=true;
+    const cred=await window._firebaseAuth.createUserWithEmailAndPassword(window._auth,pendingUser.email,pendingUser.pwd);
+    const uid=cred.user.uid;
+    const profile={prenom:pendingUser.prenom,nom:pendingUser.nom,email:pendingUser.email,tel:pendingUser.tel,newsletter:pendingUser.newsletter,role:'client',createdAt:Date.now()};
+    await window._saveUser({id:uid,...profile});
+    currentUser={id:uid,...profile};
+    DB.users.push(currentUser);
+    fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'inscription',to:pendingUser.email,prenom:pendingUser.prenom})}).catch(()=>{});
+    pendingUser=null;verifyCode=null;verifyExpiry=null;
+    window.isRegistering=false;
+    updateNav('client');
+    showPage('rdv');renderRdvPage(true);
+  } catch(e) {
+    window.isRegistering=false;
+    if(e.code==='auth/email-already-in-use')showMsg('verify-msg','error','Cette adresse email est déjà utilisée.');
+    else showMsg('verify-msg','error','Erreur lors de la création du compte. Réessayez.');
+  }
+}
+
+function resendVerifyCode(){
+  if(!pendingUser)return;
+  const now=Date.now();
+  if(now-lastVerifySent<30000)return showMsg('verify-msg','error','Veuillez patienter '+(Math.ceil((30000-(now-lastVerifySent))/1000))+' secondes avant de renvoyer un code.');
+  lastVerifySent=now;
+  verifyCode=String(Math.floor(100000+Math.random()*900000));
+  verifyExpiry=Date.now()+10*60*1000;
+  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'verification',to:pendingUser.email,prenom:pendingUser.prenom,code:verifyCode})}).catch(()=>{});
+  showMsg('verify-msg','success','Code renvoyé ! Vérifiez votre boîte mail.');
+}
+
+// OTP BOXES NAVIGATION
+(function initOTP(){
+  function setup(){
+    const boxes=document.querySelectorAll('.otp-box');
+    if(!boxes.length)return;
+    boxes.forEach((box,i)=>{
+      box.addEventListener('input',()=>{
+        box.value=box.value.replace(/[^0-9]/g,'').slice(-1);
+        box.classList.toggle('filled',box.value!=='');
+        if(box.value&&i<boxes.length-1)boxes[i+1].focus();
+      });
+      box.addEventListener('keydown',e=>{
+        if(e.key==='Backspace'&&!box.value&&i>0){boxes[i-1].focus();boxes[i-1].value='';boxes[i-1].classList.remove('filled');}
+        if(e.key==='Enter')submitVerifyCode();
+      });
+      box.addEventListener('paste',e=>{
+        e.preventDefault();
+        const paste=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'');
+        boxes.forEach((b,j)=>{b.value=paste[j]||'';b.classList.toggle('filled',!!b.value);});
+        const last=Math.min(paste.length,boxes.length)-1;
+        if(last>=0)boxes[last].focus();
       });
     });
-    request.on('error', (e) => { res.status(500).json({ error: e.message }); resolve(); });
-    request.write(payload);
-    request.end();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);
+  else setup();
+})();
+
+// ══════════════════════════════════════
+// CARROUSEL
+// ══════════════════════════════════════
+let carouselIndex=0,carouselTimer=null;
+function renderCarousel(){
+  const photos=DB.site.photos||[];
+  const wrap=document.getElementById('home-carousel-wrap');
+  const track=document.getElementById('home-carousel-track');
+  const dots=document.getElementById('carousel-dots');
+  if(!wrap)return;
+  if(!photos.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  track.innerHTML=photos.map(p=>`<div style="min-width:100%;height:100%;flex-shrink:0;background:#000"><img src="${p}" style="width:100%;height:100%;object-fit:cover;display:block" alt=""></div>`).join('');
+  dots.innerHTML=photos.map((_,i)=>`<div class="c-dot${i===0?' active':''}" onclick="goCarousel(${i})"></div>`).join('');
+  carouselIndex=0;track.style.transform='translateX(0)';
+  if(carouselTimer)clearInterval(carouselTimer);
+  if(photos.length>1)carouselTimer=setInterval(carouselNext,4000);
+}
+function goCarousel(n){
+  const photos=DB.site.photos||[];if(!photos.length)return;
+  carouselIndex=(n+photos.length)%photos.length;
+  document.getElementById('home-carousel-track').style.transform=`translateX(-${carouselIndex*100}%)`;
+  document.querySelectorAll('.c-dot').forEach((d,i)=>d.classList.toggle('active',i===carouselIndex));
+}
+function carouselNext(){goCarousel(carouselIndex+1);}
+function carouselPrev(){goCarousel(carouselIndex-1);}
+
+// ══════════════════════════════════════
+// ADMIN PHOTOS
+// ══════════════════════════════════════
+function addCarouselPhotos(e){
+  const files=Array.from(e.target.files);
+  files.forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      DB.site.photos=DB.site.photos||[];
+      DB.site.photos.push(ev.target.result);
+      if(window._saveSite)window._saveSite({photos:DB.site.photos});
+      renderAdminPhotos();renderCarousel();
+    };
+    reader.readAsDataURL(file);
   });
-};
+  e.target.value='';
+}
+function renderAdminPhotos(){
+  const list=document.getElementById('photos-admin-list');if(!list)return;
+  const photos=DB.site.photos||[];
+  list.innerHTML=photos.length?photos.map((p,i)=>`
+    <div style="position:relative;width:100px;height:75px;flex-shrink:0">
+      <img src="${p}" style="width:100%;height:100%;object-fit:cover;border:0.5px solid var(--border)">
+      <button onclick="removeCarouselPhoto(${i})" style="position:absolute;top:3px;right:3px;background:rgba(192,57,43,0.85);color:#fff;border:none;width:20px;height:20px;font-size:0.7rem;cursor:pointer">✕</button>
+    </div>`).join(''):'<p style="font-size:0.78rem;color:var(--muted)">Aucune photo ajoutée.</p>';
+}
+function removeCarouselPhoto(i){
+  DB.site.photos.splice(i,1);
+  if(window._saveSite)window._saveSite({photos:DB.site.photos});
+  renderAdminPhotos();renderCarousel();toast('Photo supprimée.');
+}
+
+// ══════════════════════════════════════
+// RDV FLOW
+// ══════════════════════════════════════
+function renderRdvPage(fresh){
+  selectedVenteId=null;selectedCreneau=null;
+  goRdvStep(1);
+  document.getElementById('rdv-ventes-list').innerHTML=DB.ventes.map(v=>{
+    const deja=DB.reservations.find(r=>r.userId===currentUser.id&&r.date===v.date&&r.status==='confirmed');
+    return `<div class="event-card" style="${deja?'opacity:0.5;pointer-events:none':''}">
+      <div class="event-card-info"><h3>${v.marque}</h3>
+        <div class="event-meta">
+          <div class="event-meta-item">Date<strong>${v.date}</strong></div>
+          <div class="event-meta-item">Remise<strong>${v.remise}</strong></div>
+        </div>
+      </div>
+      ${deja?'<span style="font-size:0.72rem;color:var(--muted);border:0.5px solid var(--border);padding:0.4rem 0.8rem">Déjà réservé</span>'
+        :`<button class="btn-primary" style="white-space:nowrap;font-size:0.7rem;padding:0.7rem 1.4rem" onclick="selectRdvVente(${v.id})">Choisir →</button>`}
+    </div>`;
+  }).join('');
+  if(fresh){
+    // show welcome tag
+    const tag=document.createElement('div');
+    tag.style.cssText='text-align:center;margin-bottom:1.5rem';
+    tag.innerHTML='<div class="gate-tag" style="color:var(--success)">✓ Compte créé avec succès</div>';
+    document.getElementById('rdv-step-1').prepend(tag);
+  }
+}
+
+function getCreneauxDisponibles(venteId){
+  const v=DB.ventes.find(x=>String(x.id)===String(venteId));
+  if(!v)return DB.creneaux.map(c=>({...c,pris:false}));
+  const prisList=DB.reservations
+    .filter(r=>r.marque===v.marque&&r.date===v.date&&(r.status==='confirmed'||r.status==='pending'))
+    .map(r=>r.creneau);
+  return DB.creneaux.map(c=>({...c,pris:prisList.includes(c.heure)||c.complet}));
+}
+
+function buildCreneauxGrid(venteId){
+  return getCreneauxDisponibles(venteId).map((c,i)=>c.pris
+    ?`<div class="creneau complet">${c.heure}<br><small>Complet</small></div>`
+    :`<div class="creneau" onclick="pickRdvCreneau(this,${i})">${c.heure}</div>`
+  ).join('');
+}
+
+function selectRdvVente(id){
+  selectedVenteId=id;
+  const v=DB.ventes.find(x=>String(x.id)===String(id));
+  document.getElementById('rdv-vente-title').textContent=v.marque+' — '+v.date;
+  document.getElementById('rdv-creneaux-grid').innerHTML=buildCreneauxGrid(id);
+  selectedCreneau=null;
+  goRdvStep(2);
+}
+
+function pickRdvCreneau(el,i){
+  document.querySelectorAll('#rdv-creneaux-grid .creneau').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');selectedCreneau=DB.creneaux[i];
+}
+
+function goRdvStep(n){
+  if(n===2&&!selectedVenteId)return;
+  if(n===3){
+    if(!selectedCreneau)return showMsg('rdv-msg','error','Veuillez choisir un créneau.');
+    const v=DB.ventes.find(x=>String(x.id)===String(selectedVenteId));
+    document.getElementById('conf-nom').textContent=(currentUser.prenom||'')+' '+(currentUser.nom||'');
+    document.getElementById('conf-marque').textContent=v.marque;
+    document.getElementById('conf-date').textContent=v.date;
+    document.getElementById('conf-creneau').textContent=selectedCreneau.heure;
+  }
+  [1,2,3].forEach(i=>{
+    document.getElementById('rdv-step-'+i).style.display=i===n?'block':'none';
+    const s=document.getElementById('step-'+i);
+    s.classList.remove('active','done');
+    if(i===n)s.classList.add('active');
+    if(i<n)s.classList.add('done');
+  });
+  window.scrollTo(0,0);
+}
+
+function submitRdv(){
+  if(!selectedVenteId||!selectedCreneau)return;
+  const v=DB.ventes.find(x=>String(x.id)===String(selectedVenteId));
+  if(DB.reservations.find(r=>r.userId===currentUser.id&&r.date===v.date&&(r.status==='confirmed'||r.status==='pending')))
+    return showMsg('rdv-msg','error','Vous avez déjà une réservation pour cette vente.');
+  const rid='r'+Date.now();
+  const ref='BLNK-'+rid.slice(-6).toUpperCase();
+  const autoAccept=DB.site.autoAccept||false;
+  const status=autoAccept?'confirmed':'pending';
+  const resa={id:rid,userId:currentUser.id,prenom:currentUser.prenom,nom:currentUser.nom||'',email:currentUser.email,marque:v.marque,creneau:selectedCreneau.heure,date:v.date,status};
+  DB.reservations.push(resa);
+  if(window._saveResa)window._saveResa(resa);
+  lastConfirm=resa;
+  selectedVenteId=null;selectedCreneau=null;
+
+  if(autoAccept){
+    // Confirmation immédiate
+    markCreneauComplet(resa.creneau);
+    if(window._updateResa)window._updateResa(rid,{status:'confirmed'});
+    fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'confirmed',to:resa.email,prenom:resa.prenom,marque:resa.marque,date:resa.date,creneau:resa.creneau,ref})}).catch(()=>{});
+  } else {
+    // Mail pending au client
+    fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'pending',to:resa.email,prenom:resa.prenom,marque:resa.marque,date:resa.date,creneau:resa.creneau,ref})}).catch(()=>{});
+    // Mail notification à l'admin
+    fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'admin-notif',to:'o.blink@hotmail.com',prenom:resa.prenom,nom:resa.nom,email:resa.email,marque:resa.marque,date:resa.date,creneau:resa.creneau,ref,rid})}).catch(()=>{});
+  }
+
+  showPage('confirm');
+  renderPendingConfirm(resa);
+}
+
+function renderPendingConfirm(resa){
+  document.getElementById('confirm-pending').style.display='block';
+  document.getElementById('confirm-accepted').style.display='none';
+  document.getElementById('cfp-marque').textContent=resa.marque;
+  document.getElementById('cfp-date').textContent=resa.date;
+  document.getElementById('cfp-creneau').textContent=resa.creneau;
+  document.getElementById('cfp-ref').textContent='BLNK-'+resa.id.slice(-6).toUpperCase();
+  document.getElementById('cfp-email').textContent=resa.email||currentUser.email||'votre email';
+}
+
+function acceptResa(rid){
+  const r=DB.reservations.find(x=>x.id===rid);
+  if(!r)return;
+  r.status='confirmed';
+  markCreneauComplet(r.creneau);
+  if(window._updateResa)window._updateResa(rid,{status:'confirmed'});
+  lastConfirm=r;
+  fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'confirmed',to:r.email,prenom:r.prenom,marque:r.marque,date:r.date,creneau:r.creneau,ref:'BLNK-'+rid.slice(-6).toUpperCase()})}).catch(()=>{});
+  if(document.getElementById('page-confirm').classList.contains('active')){
+    document.getElementById('confirm-pending').style.display='none';
+    document.getElementById('confirm-accepted').style.display='block';
+    document.getElementById('cfp-marque2').textContent=r.marque;
+    document.getElementById('cfp-date2').textContent=r.date;
+    document.getElementById('cfp-creneau2').textContent=r.creneau;
+    document.getElementById('cfp-ref2').textContent='BLNK-'+rid.slice(-6).toUpperCase();
+  }
+  toast('🎉 Votre réservation a été confirmée !');
+}
+
+function downloadTicketFromConfirm(){
+  if(!lastConfirm)return;
+  const r=lastConfirm;
+  downloadTicket(r.id,r.prenom+' '+(r.nom||''),r.marque,r.date,r.creneau);
+}
+
+// ══════════════════════════════════════
+// CLIENT SPACE
+// ══════════════════════════════════════
+function enterClient(){
+  document.getElementById('client-name').textContent=currentUser.prenom||'Membre';
+  showPage('client');updateNav('client');renderPublic();
+  const resas=DB.reservations.filter(r=>r.userId===currentUser.id);
+  const c=document.getElementById('client-reservations');
+  if(!resas.length){c.innerHTML='<div class="empty-state"><strong>Aucune réservation</strong><p style="margin-top:0.5rem">Réservez votre prochain créneau depuis le bouton ci-dessus.</p></div>';return;}
+  c.innerHTML=resas.map(r=>`
+    <div class="resa-card">
+      <div class="rc-top"><h3>${r.marque}</h3><span class="resa-badge ${r.status==='pending'?'pending':r.status}">${r.status==='confirmed'?'Confirmée':r.status==='pending'?'En attente':'Annulée'}</span></div>
+      <div class="resa-meta">
+        <div class="resa-meta-item">Date<strong>${r.date}</strong></div>
+        <div class="resa-meta-item">Créneau<strong>${r.creneau}</strong></div>
+      </div>
+      <div class="resa-actions">
+        ${r.status==='confirmed'
+          ?`<button class="btn-primary" style="font-size:0.7rem;padding:0.65rem 1.4rem" onclick="downloadTicket('${r.id}','${r.prenom} ${r.nom}','${r.marque}','${r.date}','${r.creneau}')">↓ Ticket PDF</button>
+          <button class="tbl-btn danger" onclick="cancelResa('${r.id}')">Annuler</button>`
+          :r.status==='pending'
+          ?'<span style="font-size:0.78rem;color:var(--gold)">⏳ En attente de confirmation par email…</span>'
+          :'<span style="font-size:0.78rem;color:var(--muted)">Réservation annulée</span>'}
+      </div>
+    </div>`).join('');
+}
+
+function cancelResa(id){
+  if(!confirm('Annuler cette réservation ?'))return;
+  const r=DB.reservations.find(x=>x.id===id);
+  if(r){r.status='cancelled';const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c)c.complet=false;if(window._updateResa)window._updateResa(id,{status:'cancelled'});}
+  enterClient();toast('Réservation annulée.');
+}
+
+// ══════════════════════════════════════
+// MON COMPTE
+// ══════════════════════════════════════
+function toggleAccountMenu(){const d=document.getElementById('account-dropdown');if(d)d.classList.toggle('open');}
+document.addEventListener('click',function(e){const w=document.querySelector('.account-menu-wrap');if(w&&!w.contains(e.target)){const d=document.getElementById('account-dropdown');if(d)d.classList.remove('open');}});
+
+function openMonCompte(){
+  const d=document.getElementById('account-dropdown');if(d)d.classList.remove('open');
+  document.getElementById('mc-prenom').value=currentUser.prenom||'';
+  document.getElementById('mc-nom').value=currentUser.nom||'';
+  document.getElementById('mc-tel').value=currentUser.tel||'';
+  document.getElementById('mc-pwd').value='';document.getElementById('mc-pwd2').value='';
+  document.getElementById('mc-err').style.display='none';
+  document.getElementById('mc-ok').style.display='none';
+  document.getElementById('overlay-compte').classList.add('active');
+}
+
+async function saveMonCompte(){
+  const prenom=document.getElementById('mc-prenom').value.trim();
+  const nom=document.getElementById('mc-nom').value.trim();
+  const tel=document.getElementById('mc-tel').value.trim();
+  const pwd=document.getElementById('mc-pwd').value;
+  const pwd2=document.getElementById('mc-pwd2').value;
+  const pwdActuel=document.getElementById('mc-pwd-actuel')?.value||'';
+  const errEl=document.getElementById('mc-err');errEl.style.display='none';
+  if(!prenom||!nom){errEl.textContent='Prénom et nom requis.';errEl.style.display='block';return;}
+  if(tel&&!validateTel(tel)){errEl.textContent='Numéro de téléphone invalide (format français, ex: 06 12 34 56 78).';errEl.style.display='block';return;}
+  if(pwd&&pwd.length<6){errEl.textContent='Mot de passe trop court (6 car. min).';errEl.style.display='block';return;}
+  if(pwd&&pwd!==pwd2){errEl.textContent='Les mots de passe ne correspondent pas.';errEl.style.display='block';return;}
+  const telFormatted=tel?formatTel(tel):'';
+  try {
+    // Changer le mot de passe si demandé
+    if(pwd&&pwdActuel){
+      const FA=window._firebaseAuth;
+      const cred=FA.EmailAuthProvider.credential(currentUser.email,pwdActuel);
+      await FA.reauthenticateWithCredential(window._auth.currentUser,cred);
+      await FA.updatePassword(window._auth.currentUser,pwd);
+    }
+    // Sauvegarder le profil
+    const updates={prenom,nom,tel:telFormatted};
+    const u=DB.users.find(u=>u.id===currentUser.id);
+    if(u){Object.assign(u,updates);}
+    currentUser.prenom=prenom;currentUser.nom=nom;currentUser.tel=telFormatted;
+    await window._saveUser({id:currentUser.id,...currentUser});
+    document.getElementById('mc-ok').style.display='block';
+    document.getElementById('client-name').textContent=prenom;
+  } catch(e) {
+    if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')errEl.textContent='Mot de passe actuel incorrect.';
+    else errEl.textContent='Erreur lors de la mise à jour.';
+    errEl.style.display='block';
+  }
+}
+
+function confirmDeleteAccount(){
+  if(!confirm('Supprimer définitivement votre compte et toutes vos réservations ?'))return;
+  const uid=currentUser.id;
+  DB.reservations.filter(r=>r.userId===uid).forEach(r=>{if(window._deleteResa)window._deleteResa(r.id);});
+  DB.users=DB.users.filter(u=>u.id!==uid);
+  DB.reservations=DB.reservations.filter(r=>r.userId!==uid);
+  if(window._deleteUser)window._deleteUser(uid);
+  document.getElementById('overlay-compte').classList.remove('active');
+  logout();toast('Compte supprimé.');
+}
+
+// ══════════════════════════════════════
+// ADMIN
+// ══════════════════════════════════════
+function enterAdmin(){showPage('admin');updateNav('admin');renderDashboard();}
+
+function showAdminPanel(name,el){
+  document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(el)el.classList.add('active');
+  if(name==='dashboard')renderDashboard();
+  if(name==='ventes')renderVentes();
+  if(name==='creneaux')renderCreneauxAdmin();
+  if(name==='inscrits')renderInscrits();
+  if(name==='reservations')renderReservations();
+  if(name==='contenu')renderContenu();
+}
+
+function getPlacesReelles(venteId){
+  // Calcule les places restantes pour une vente donnée
+  const v=DB.ventes.find(x=>String(x.id)===String(venteId));
+  if(!v)return{restantes:0,total:DB.creneaux.length};
+  const total=DB.creneaux.length;
+  const prises=DB.reservations.filter(r=>r.marque===v.marque&&r.date===v.date&&r.status==='confirmed').length;
+  return{restantes:Math.max(0,total-prises),total};
+}
+
+function renderDashboard(){
+  const clients=DB.users.filter(u=>u.role==='client');
+  const resasConfirmed=DB.reservations.filter(r=>r.status==='confirmed');
+  const resasPending=DB.reservations.filter(r=>r.status==='pending');
+  const resasCancelled=DB.reservations.filter(r=>r.status==='cancelled');
+
+  // Stats principales
+  document.getElementById('stat-membres').textContent=clients.length;
+  document.getElementById('stat-resas').textContent=resasConfirmed.length;
+  document.getElementById('stat-ventes').textContent=DB.ventes.length;
+
+  // Stats secondaires
+  const statsExtra=document.getElementById('stats-extra');
+  if(statsExtra){
+    const tauxOccupation=DB.creneaux.length>0?Math.round(resasConfirmed.length/DB.creneaux.length*100):0;
+    const newsletter=clients.filter(u=>u.newsletter).length;
+    statsExtra.innerHTML=`
+      <div class="stat-card"><div class="s-label">En attente</div><div class="s-num" style="font-size:1.5rem;color:var(--gold)">${resasPending.length}</div></div>
+      <div class="stat-card"><div class="s-label">Annulées</div><div class="s-num" style="font-size:1.5rem;color:var(--danger)">${resasCancelled.length}</div></div>
+      <div class="stat-card"><div class="s-label">Newsletter</div><div class="s-num" style="font-size:1.5rem">${newsletter}</div></div>
+    `;
+  }
+
+  // Répartition par vente
+  const ventesStats=document.getElementById('ventes-stats');
+  if(ventesStats){
+    ventesStats.innerHTML=DB.ventes.map(v=>{
+      const p=getPlacesReelles(v.id);
+      const pct=p.total>0?Math.round((p.total-p.restantes)/p.total*100):0;
+      return`<div style="margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:0.3rem">
+          <span><strong>${v.marque}</strong> — ${v.date}</span>
+          <span style="color:var(--muted)">${p.total-p.restantes}/${p.total} places</span>
+        </div>
+        <div style="background:var(--border);height:6px;border-radius:3px">
+          <div style="background:var(--charcoal);height:6px;border-radius:3px;width:${pct}%;transition:width 0.3s"></div>
+        </div>
+      </div>`;
+    }).join('')||'<p style="color:var(--muted);font-size:0.82rem">Aucune vente programmée.</p>';
+  }
+
+  // Dernières réservations
+  const resas=DB.reservations.slice(-8).reverse();
+  document.getElementById('dash-tbody').innerHTML=resas.map(r=>`
+    <tr>
+      <td>${r.prenom} ${r.nom}</td><td>${r.email}</td><td>${r.marque}</td><td>${r.creneau}</td>
+      <td><span class="resa-badge ${r.status}" style="font-size:0.65rem">${r.status==='confirmed'?'Confirmée':r.status==='pending'?'En attente':'Annulée'}</span></td>
+      <td>
+        ${r.status==='confirmed'?`<button class="tbl-btn danger" onclick="adminCancelResa('${r.id}')">Annuler</button>`
+          :r.status==='pending'?`<button class="tbl-btn success" onclick="adminConfirmResa('${r.id}')">Accepter</button>`
+          :`<button class="tbl-btn success" onclick="adminConfirmResa('${r.id}')">Réactiver</button>`}
+      </td>
+    </tr>`).join('')||'<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:1.5rem">Aucune réservation</td></tr>';
+}
+
+function adminCancelResa(id){
+  const r=DB.reservations.find(x=>x.id===id);
+  if(r){r.status='cancelled';const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c)c.complet=false;if(window._updateResa)window._updateResa(id,{status:'cancelled'});if(window._saveCreneaux)window._saveCreneaux(DB.creneaux);}
+  renderDashboard();renderReservations();toast('Réservation annulée.');
+}
+function adminConfirmResa(id){
+  const r=DB.reservations.find(x=>x.id===id);
+  if(r){
+    r.status='confirmed';
+    markCreneauComplet(r.creneau);
+    if(window._updateResa)window._updateResa(id,{status:'confirmed'});
+    if(window._saveCreneaux)window._saveCreneaux(DB.creneaux);
+    const emailTo=r.email||(DB.users.find(u=>u.id===r.userId)||{}).email||'';
+    const prenomTo=r.prenom||(DB.users.find(u=>u.id===r.userId)||{}).prenom||'';
+    if(emailTo){
+      fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'confirmed',to:emailTo,prenom:prenomTo,marque:r.marque,date:r.date,creneau:r.creneau,ref:'BLNK-'+id.slice(-6).toUpperCase()})})
+        .then(res=>res.json()).then(d=>console.log('Mail confirmed:',d)).catch(e=>console.error('Mail error:',e));
+    }
+  }
+  renderDashboard();renderReservations();toast('Confirmée — mail envoyé ✓');
+  if(name==='mailing')renderMailing();
+}
+
+function renderMailing(){
+  const abonnes=DB.users.filter(u=>u.role==='client'&&u.newsletter!==false);
+  document.getElementById('mail-send-info').textContent=`${abonnes.length} membre${abonnes.length>1?'s':''} abonné${abonnes.length>1?'s':''} recevront cet email.`;
+}
+
+function previewMailing(){
+  const subject=document.getElementById('mail-subject').value.trim();
+  const body=document.getElementById('mail-body').value.trim();
+  if(!subject||!body)return showMsg('mail-msg','error','Veuillez remplir l\'objet et le message.');
+  document.getElementById('mail-preview').textContent=body;
+  document.getElementById('mail-preview-wrap').style.display='block';
+  showMsg('mail-msg','','');
+}
+
+async function sendMailing(){
+  const subject=document.getElementById('mail-subject').value.trim();
+  const body=document.getElementById('mail-body').value.trim();
+  if(!subject||!body)return showMsg('mail-msg','error','Veuillez remplir l\'objet et le message.');
+  const abonnes=DB.users.filter(u=>u.role==='client'&&u.newsletter!==false&&u.email);
+  if(!abonnes.length)return showMsg('mail-msg','error','Aucun abonné trouvé.');
+  showMsg('mail-msg','success','Envoi en cours...');
+  let ok=0,err=0;
+  for(const u of abonnes){
+    try{
+      const res=await fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'mailing',to:u.email,prenom:u.prenom,subject,body})});
+      const d=await res.json();
+      if(d.success)ok++;else err++;
+    }catch(e){err++;}
+  }
+  showMsg('mail-msg','success',`✓ ${ok} email${ok>1?'s':''} envoyé${ok>1?'s':''}${err>0?' · '+err+' échec':''}.`);
+  if(ok===abonnes.length){document.getElementById('mail-subject').value='';document.getElementById('mail-body').value='';document.getElementById('mail-preview-wrap').style.display='none';}
+}
+  const sel=document.getElementById('reg-marque');
+  document.getElementById('ventes-list').innerHTML=DB.ventes.map(v=>`
+    <div class="edit-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <div style="font-size:1rem;font-weight:500;color:var(--charcoal)">${v.marque}</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:0.3rem">${v.date} · <span style="color:var(--gold)">${v.remise}</span></div>
+      </div>
+      <div style="display:flex;gap:0.6rem">
+        <button class="tbl-btn" onclick="openAddVenteModal('${v.id}')">✏️ Modifier</button>
+        <button class="tbl-btn danger" onclick="deleteVente('${v.id}')">Supprimer</button>
+      </div>
+    </div>`).join('')||'<p style="color:var(--muted);font-size:0.85rem;padding:1rem">Aucune vente programmée.</p>';
+  const selV=document.getElementById('reg-marque');
+  if(selV)selV.innerHTML=DB.ventes.map(v=>`<option value="${v.id}">${v.marque} — ${v.date}</option>`).join('');
+}
+
+function openAddVenteModal(editId){
+  document.getElementById('vm-msg').style.display='none';
+  if(editId){
+    const v=DB.ventes.find(x=>String(x.id)===String(editId));
+    document.getElementById('vente-modal-title').textContent='Modifier la vente';
+    document.getElementById('vm-marque').value=v.marque||'';
+    document.getElementById('vm-remise').value=v.remise||'';
+    document.getElementById('vm-date').value=venteStringToInput(v.date);
+    document.getElementById('vm-edit-id').value=editId;
+    updateVmDateDisplay();
+  } else {
+    document.getElementById('vente-modal-title').textContent='Nouvelle vente privée';
+    document.getElementById('vm-marque').value='';
+    document.getElementById('vm-remise').value='';
+    document.getElementById('vm-date').value='';
+    document.getElementById('vm-date-display').textContent='';
+    document.getElementById('vm-edit-id').value='';
+  }
+  document.getElementById('overlay-vente').classList.add('active');
+  setTimeout(()=>document.getElementById('vm-marque').focus(),100);
+}
+
+function closeVenteModal(){document.getElementById('overlay-vente').classList.remove('active');}
+
+function venteStringToInput(dateStr){
+  const mois={janvier:'01',février:'02',mars:'03',avril:'04',mai:'05',juin:'06',juillet:'07',août:'08',septembre:'09',octobre:'10',novembre:'11',décembre:'12'};
+  const parts=dateStr.toLowerCase().split(' ');
+  if(parts.length>=4){const jour=parts[1]?.padStart(2,'0');const m=mois[parts[2]];const y=parts[3];if(jour&&m&&y)return`${y}-${m}-${jour}`;}
+  return '';
+}
+
+function inputToVenteString(dateVal){
+  if(!dateVal)return '';
+  const d=new Date(dateVal+'T12:00:00');
+  const s=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+
+function updateVmDateDisplay(){
+  const val=document.getElementById('vm-date').value;
+  document.getElementById('vm-date-display').textContent=val?inputToVenteString(val):'';
+}
+
+function saveVenteModal(){
+  const marque=document.getElementById('vm-marque').value.trim();
+  const remise=document.getElementById('vm-remise').value.trim();
+  const dateVal=document.getElementById('vm-date').value;
+  const editId=document.getElementById('vm-edit-id').value;
+  if(!marque||!remise||!dateVal)return showMsg('vm-msg','error','Veuillez remplir tous les champs.');
+  const dateStr=inputToVenteString(dateVal);
+  if(editId){
+    const v=DB.ventes.find(x=>String(x.id)===String(editId));
+    if(v){v.marque=marque;v.remise=remise;v.date=dateStr;if(window._saveVente)window._saveVente(v);}
+  } else {
+    const id='v'+Date.now();
+    const newV={id,marque,remise,date:dateStr};
+    DB.ventes.push(newV);
+    if(window._saveVente)window._saveVente(newV);
+  }
+  closeVenteModal();renderVentes();renderPublic();
+  toast(editId?'Vente mise à jour ✓':'Vente ajoutée ✓');
+}
+
+function saveVente(id){
+  const v=DB.ventes.find(x=>String(x.id)===String(id));
+  if(v){if(window._saveVente)window._saveVente(v);}
+  renderVentes();renderPublic();toast('Vente mise à jour ✓');
+}
+function deleteVente(id){if(!confirm('Supprimer cette vente ?'))return;DB.ventes=DB.ventes.filter(v=>String(v.id)!==String(id));if(window._deleteVente)window._deleteVente(id);renderVentes();renderPublic();}
+function addVente(){openAddVenteModal();}
+
+function renderCreneauxAdmin(){
+  document.getElementById('creneaux-admin').innerHTML=DB.creneaux.map((c,i)=>`
+    <div class="creneau-row">
+      <input type="text" value="${c.heure}" id="cr-h-${i}" style="width:90px;padding:0.35rem 0.6rem;font-size:0.8rem;border:0.5px solid var(--border);font-family:'Inter',sans-serif;background:#fff;outline:none">
+      <label style="font-size:0.78rem;color:var(--muted);display:flex;align-items:center;gap:0.4rem"><input type="checkbox" id="cr-c-${i}" ${c.complet?'checked':''}>Complet</label>
+      <button class="tbl-btn danger" onclick="deleteCreneau(${i})">✕</button>
+    </div>`).join('');
+}
+function saveCreneaux(){DB.creneaux=DB.creneaux.map((_,i)=>({heure:document.getElementById('cr-h-'+i).value,complet:document.getElementById('cr-c-'+i).checked}));if(window._saveCreneaux)window._saveCreneaux(DB.creneaux);renderPublic();toast('Créneaux enregistrés ✓');}
+function addCreneau(){DB.creneaux.push({heure:'19h00',complet:false});renderCreneauxAdmin();}
+function deleteCreneau(i){DB.creneaux.splice(i,1);renderCreneauxAdmin();}
+
+function renderInscrits(){
+  const clients=DB.users.filter(u=>u.role==='client');
+  document.getElementById('inscrits-tbody').innerHTML=clients.map(u=>`
+    <tr>
+      <td>${u.prenom} ${u.nom}</td><td>${u.email}</td><td>${u.tel||'—'}</td>
+      <td>${u.newsletter?'✓':'—'}</td>
+      <td><button class="tbl-btn danger" onclick="deleteUser('${u.id}')">Supprimer</button></td>
+    </tr>`).join('')||'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:1.5rem">Aucun inscrit</td></tr>';
+}
+
+function filterInscrits(){
+  const q=document.getElementById('search-inscrits').value.toLowerCase();
+  const rows=document.querySelectorAll('#inscrits-tbody tr');
+  rows.forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';});
+}
+
+function deleteUser(id){
+  if(!confirm('Supprimer cet inscrit ?'))return;
+  DB.reservations.filter(r=>r.userId===id).forEach(r=>{if(window._deleteResa)window._deleteResa(r.id);});
+  DB.users=DB.users.filter(u=>u.id!==id);
+  DB.reservations=DB.reservations.filter(r=>r.userId!==id);
+  if(window._deleteUser)window._deleteUser(id);
+  renderInscrits();renderDashboard();toast('Inscrit supprimé.');
+}
+
+function exportCSV(){
+  const clients=DB.users.filter(u=>u.role==='client');
+  const rows=[['Prénom','Nom','Email','Téléphone','Newsletter'],...clients.map(u=>[u.prenom,u.nom,u.email,u.tel||'',u.newsletter?'Oui':'Non'])];
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='blink-select-inscrits.csv';a.click();
+  toast('Export CSV téléchargé ✓');
+}
+
+function renderReservations(){
+  document.getElementById('resas-tbody').innerHTML=DB.reservations.map(r=>`
+    <tr>
+      <td>${r.prenom} ${r.nom}</td><td>${r.marque}</td><td>${r.date}</td><td>${r.creneau}</td>
+      <td><span class="resa-badge ${r.status}" style="font-size:0.65rem">${r.status==='confirmed'?'Confirmée':'Annulée'}</span></td>
+      <td style="display:flex;gap:0.4rem;flex-wrap:wrap">
+        ${r.status==='confirmed'
+          ?`<button class="tbl-btn danger" onclick="adminCancelResaPanel('${r.id}')">Annuler</button>`
+          :r.status==='pending'
+          ?`<button class="tbl-btn success" onclick="adminConfirmResaPanel('${r.id}')">Accepter</button><button class="tbl-btn danger" onclick="adminCancelResaPanel('${r.id}')">Refuser</button>`
+          :`<button class="tbl-btn success" onclick="adminConfirmResaPanel('${r.id}')">Réactiver</button>`}
+        <button class="tbl-btn danger" onclick="adminDeleteResa('${r.id}')">Supprimer</button>
+      </td>
+    </tr>`).join('')||'<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:1.5rem">Aucune réservation</td></tr>';
+}
+
+function filterResas(){
+  const q=document.getElementById('search-resas').value.toLowerCase();
+  document.querySelectorAll('#resas-tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';});
+}
+function adminCancelResaPanel(id){const r=DB.reservations.find(x=>x.id===id);if(r){r.status='cancelled';const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c)c.complet=false;if(window._updateResa)window._updateResa(id,{status:'cancelled'});}renderReservations();renderDashboard();toast('Annulée.');}
+function adminConfirmResaPanel(id){
+  const r=DB.reservations.find(x=>x.id===id);
+  if(r){
+    r.status='confirmed';
+    markCreneauComplet(r.creneau);
+    if(window._updateResa)window._updateResa(id,{status:'confirmed'});
+    if(window._saveCreneaux)window._saveCreneaux(DB.creneaux);
+    const emailTo=r.email||(DB.users.find(u=>u.id===r.userId)||{}).email||'';
+    const prenomTo=r.prenom||(DB.users.find(u=>u.id===r.userId)||{}).prenom||'';
+    if(emailTo){
+      fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'confirmed',to:emailTo,prenom:prenomTo,marque:r.marque,date:r.date,creneau:r.creneau,ref:'BLNK-'+id.slice(-6).toUpperCase()})})
+        .then(res=>res.json()).then(d=>console.log('Mail confirmed:',d)).catch(e=>console.error('Mail error:',e));
+    }
+  }
+  renderReservations();renderDashboard();toast('Confirmée — mail envoyé ✓');
+}
+function adminDeleteResa(id){if(!confirm('Supprimer définitivement ?'))return;const r=DB.reservations.find(x=>x.id===id);if(r){const c=DB.creneaux.find(x=>x.heure===r.creneau);if(c&&r.status==='confirmed')c.complet=false;}DB.reservations=DB.reservations.filter(x=>x.id!==id);if(window._deleteResa)window._deleteResa(id);renderReservations();renderDashboard();toast('Supprimée.');}
+
+function saveAutoAccept(){
+  DB.site.autoAccept=document.getElementById('toggle-auto-accept').checked;
+  if(window._saveSite)window._saveSite({autoAccept:DB.site.autoAccept});
+  document.getElementById('auto-accept-label').textContent=DB.site.autoAccept?'Acceptation automatique':'Acceptation manuelle';
+  toast(DB.site.autoAccept?'Acceptation automatique activée ✓':'Acceptation manuelle activée ✓');
+}
+
+function renderContenu(){
+  const s=DB.site;
+  document.getElementById('c-tag').value=s.tag;document.getElementById('c-title').value=s.title;document.getElementById('c-desc').value=s.desc;
+  document.getElementById('c-cd-brand').value=s.cd.brand;document.getElementById('c-cd-discount').value=s.cd.discount;
+  document.getElementById('c-cd-places').value=s.cd.places;document.getElementById('c-cd-total').value=s.cd.total;document.getElementById('c-cd-label').value=s.cd.label;
+  const autoAccept=s.autoAccept||false;
+  document.getElementById('toggle-auto-accept').checked=autoAccept;
+  document.getElementById('auto-accept-label').textContent=autoAccept?'Acceptation automatique':'Acceptation manuelle';
+  renderAdminPhotos();
+}
+function saveContenu(){DB.site.tag=document.getElementById('c-tag').value;DB.site.title=document.getElementById('c-title').value;DB.site.desc=document.getElementById('c-desc').value;if(window._saveSite)window._saveSite({tag:DB.site.tag,title:DB.site.title,desc:DB.site.desc});renderPublic();toast('Contenu mis à jour ✓');}
+function saveCompteur(){DB.site.cd.brand=document.getElementById('c-cd-brand').value;DB.site.cd.discount=document.getElementById('c-cd-discount').value;DB.site.cd.places=parseInt(document.getElementById('c-cd-places').value)||0;DB.site.cd.total=parseInt(document.getElementById('c-cd-total').value)||40;DB.site.cd.label=document.getElementById('c-cd-label').value;if(window._saveSite)window._saveSite({cd:DB.site.cd});renderPublic();toast('Compteur mis à jour ✓');}
+
+// ══════════════════════════════════════
+// CRENEAUX
+// ══════════════════════════════════════
+function markCreneauComplet(heure){const c=DB.creneaux.find(x=>x.heure===heure);if(c)c.complet=true;}
+
+// ══════════════════════════════════════
+// TICKET PDF
+// ══════════════════════════════════════
+function downloadTicket(id,nom,marque,date,creneau){
+  if(!window.jspdf){alert('PDF en cours de chargement, réessayez dans un instant.');return;}
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a5',orientation:'portrait'});
+  const W=148,H=210,ref='BLNK-'+id.slice(-6).toUpperCase();
+  doc.setFillColor(26,26,24);doc.rect(0,0,W,62,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(184,168,122);doc.text('Blink Sélect',12,18);
+  doc.setFont('helvetica','normal');doc.setFontSize(20);doc.setTextColor(255,255,255);doc.text('Vente Privée',12,33);
+  doc.setFontSize(8);doc.setTextColor(180,180,180);doc.text('Accès réservé aux membres · Sur invitation uniquement',12,43);
+  doc.setDrawColor(229,229,224);doc.setLineWidth(0.3);doc.line(12,70,W-12,70);
+  const fields=[['TITULAIRE',nom,12,82],['MARQUE',marque,W/2+4,82],['DATE',date,12,102],['CRÉNEAU',creneau,W/2+4,102]];
+  fields.forEach(([lbl,val,x,y])=>{
+    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(107,107,101);doc.text(lbl,x,y);
+    doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(26,26,24);doc.text(val,x,y+7);
+  });
+  doc.setDrawColor(229,229,224);doc.line(12,117,W-12,117);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(107,107,101);doc.text('Réf. '+ref,12,128);
+  doc.setFillColor(26,26,24);doc.roundedRect(W-50,121,38,10,1,1,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(255,255,255);doc.text('✓ CONFIRMÉ',W-46,127.5);
+  doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(180,180,180);doc.text('o.blink@hotmail.com',12,H-10);
+  doc.save('ticket-blink-'+ref+'.pdf');
+}
+
+// ══════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════
+function toast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'2rem',right:'2rem',background:'var(--charcoal)',color:'var(--ivory)',padding:'0.7rem 1.4rem',fontSize:'0.8rem',zIndex:'9999',transition:'opacity 0.4s'});document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400)},2200);}
+function showMsg(id,type,txt){const el=document.getElementById(id);if(!el)return;el.className='msg '+type+' active';el.textContent=txt;el.scrollIntoView({behavior:'smooth',block:'nearest'});}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+document.getElementById('overlay-auth').addEventListener('click',function(e){if(e.target===this)closeAuth();});
+document.getElementById('overlay-cgv').addEventListener('click',function(e){if(e.target===this)document.getElementById('overlay-cgv').classList.remove('active');});
+document.getElementById('overlay-compte').addEventListener('click',function(e){if(e.target===this)document.getElementById('overlay-compte').classList.remove('active');});
+renderPublic();
+if(!currentUser){
+  document.querySelector('nav').style.display='none';
+  showGate();
+}
+</script>
+</body>
+</html>
