@@ -181,7 +181,19 @@ footer p{font-size:0.73rem;color:var(--muted)}
 .otp-box{width:48px;height:58px;text-align:center;font-size:1.6rem;font-family:'Playfair Display',serif;border:0.5px solid var(--border);background:#fff;outline:none;color:var(--charcoal);transition:border-color 0.15s}
 .otp-box:focus{border-color:var(--charcoal)}
 .otp-box.filled{border-color:var(--charcoal);background:var(--ivory)}
-/* TOGGLE SWITCH */
+/* AUTH LAYOUT */
+.auth-page-wrap{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+.auth-left{background:var(--charcoal);display:flex;flex-direction:column;justify-content:space-between;padding:3rem;position:relative;overflow:hidden}
+.auth-right{display:flex;flex-direction:column;justify-content:center;padding:4rem 3rem;max-width:480px;margin:0 auto;width:100%}
+.auth-mobile-logo{display:none;font-family:'Playfair Display',serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--charcoal);margin-bottom:2rem}
+.auth-mobile-logo em{color:var(--gold);font-style:normal}
+
+@media(max-width:720px){
+  .auth-page-wrap{grid-template-columns:1fr;min-height:100vh}
+  .auth-left{display:none}
+  .auth-right{padding:3rem 1.5rem;max-width:100%;min-height:100vh;justify-content:center}
+  .auth-mobile-logo{display:block}
+}
 .toggle-switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
 .toggle-switch input{opacity:0;width:0;height:0}
 .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--border);transition:.3s;border-radius:24px}
@@ -279,12 +291,7 @@ input:focus,textarea:focus{box-shadow:0 0 0 3px rgba(184,168,122,0.15)}
   /* FOOTER */
   footer{flex-direction:column;gap:0.5rem;text-align:center;padding:1.3rem 1.1rem}
 
-  /* PAGE LOGIN / FORGOT : plein écran mobile */
-  #page-login>div,#page-forgot>div{grid-template-columns:1fr;min-height:100vh}
-  #page-login>div>div:first-child,#page-forgot>div>div:first-child{display:none}
-  #page-login>div>div:last-child,#page-forgot>div>div:last-child{padding:2.5rem 1.4rem;max-width:100%;min-height:auto;justify-content:center}
-  #page-login h1,#page-forgot h1{font-size:1.7rem}
-  .mobile-auth-header{display:block !important}
+  /* PAGE LOGIN / FORGOT : géré par .auth-page-wrap */
 
   /* PAGE REGISTER */
   #page-register>div{padding:2rem 1.4rem}
@@ -454,14 +461,9 @@ input:focus,textarea:focus{box-shadow:0 0 0 3px rgba(184,168,122,0.15)}
   </div>
 </div>
 <div class="page" id="page-login">
-  <!-- Header mobile uniquement -->
-  <div class="mobile-auth-header" style="display:none;background:var(--charcoal);padding:2rem 1.4rem 1.5rem;text-align:center">
-    <div class="logo" style="color:#fff;font-size:1.2rem;margin-bottom:0.4rem">Blink <em>Sélect</em></div>
-    <div style="font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold)">Ventes privées · Sur invitation</div>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;min-height:100vh">
-    <!-- Gauche : visuel -->
-    <div style="background:var(--charcoal);display:flex;flex-direction:column;justify-content:space-between;padding:3rem;position:relative;overflow:hidden">
+  <div class="auth-page-wrap">
+    <!-- Gauche : visuel desktop uniquement -->
+    <div class="auth-left">
       <div class="logo" style="color:#fff" onclick="showPage('public');renderPublic()">Blink <em>Sélect</em></div>
       <div>
         <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:1.2rem">Ventes privées · Sur invitation</div>
@@ -473,8 +475,9 @@ input:focus,textarea:focus{box-shadow:0 0 0 3px rgba(184,168,122,0.15)}
       <div style="position:absolute;right:-20px;top:-20px;width:200px;height:200px;border-radius:50%;border:0.5px solid rgba(184,168,122,0.1)"></div>
     </div>
     <!-- Droite : formulaire -->
-    <div style="display:flex;flex-direction:column;justify-content:center;padding:4rem 3rem;max-width:480px;margin:0 auto;width:100%">
-      <div style="margin-bottom:2.5rem">
+    <div class="auth-right">
+      <div class="auth-mobile-logo">Blink <em>Sélect</em></div>
+      <div style="margin-bottom:2rem">
         <div class="gate-tag">Connexion</div>
         <h1 style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;margin-top:0.5rem">Bon retour parmi nous</h1>
         <p style="font-size:0.84rem;color:var(--muted);margin-top:0.5rem">Connectez-vous pour accéder à vos réservations.</p>
@@ -491,8 +494,8 @@ input:focus,textarea:focus{box-shadow:0 0 0 3px rgba(184,168,122,0.15)}
 
 <!-- PAGE MOT DE PASSE OUBLIÉ -->
 <div class="page" id="page-forgot">
-  <div style="display:grid;grid-template-columns:1fr 1fr;min-height:100vh">
-    <div style="background:var(--charcoal);display:flex;flex-direction:column;justify-content:space-between;padding:3rem;position:relative;overflow:hidden">
+  <div class="auth-page-wrap">
+    <div class="auth-left">
       <div class="logo" style="color:#fff" onclick="showPage('public');renderPublic()">Blink <em>Sélect</em></div>
       <div>
         <div style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:1.2rem">Sécurité du compte</div>
@@ -501,8 +504,9 @@ input:focus,textarea:focus{box-shadow:0 0 0 3px rgba(184,168,122,0.15)}
       <p style="font-size:0.72rem;color:rgba(255,255,255,0.3)">o.blink@hotmail.com</p>
       <div style="position:absolute;right:-60px;top:-60px;width:300px;height:300px;border-radius:50%;border:0.5px solid rgba(184,168,122,0.15)"></div>
     </div>
-    <div style="display:flex;flex-direction:column;justify-content:center;padding:4rem 3rem;max-width:480px;margin:0 auto;width:100%">
-      <div style="margin-bottom:2.5rem">
+    <div class="auth-right">
+      <div class="auth-mobile-logo">Blink <em>Sélect</em></div>
+      <div style="margin-bottom:2rem">
         <div class="gate-tag">Réinitialisation</div>
         <h1 style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;margin-top:0.5rem">Mot de passe oublié</h1>
         <p style="font-size:0.84rem;color:var(--muted);margin-top:0.5rem">Entrez votre email pour recevoir un lien de réinitialisation.</p>
