@@ -166,9 +166,52 @@ module.exports = async (req, res) => {
   <div class="footer">Blink Sélect · o.blink@hotmail.com<br>Si vous n'avez pas créé de compte, ignorez cet email.</div>
 </div>
 </body></html>`;
+  } else if (type === 'admin-notif') {
+    const { nom, email: clientEmail, rid } = req.body;
+    subject = `🔔 Nouvelle réservation — ${prenom} ${nom} — ${marque}`;
+    htmlContent = `
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<style>
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FAFAF8;margin:0;padding:0}
+  .wrap{max-width:560px;margin:40px auto;background:#fff;border:1px solid #E5E5E0}
+  .header{background:#1A1A18;padding:32px 40px}
+  .logo{font-size:20px;letter-spacing:0.06em;color:#B8A87A;font-weight:500}
+  .body{padding:40px}
+  .tag{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#B8A87A;margin-bottom:12px}
+  h1{font-size:22px;font-weight:400;color:#1A1A18;margin:0 0 16px}
+  .recap{background:#FAFAF8;border:1px solid #E5E5E0;padding:20px;margin:24px 0}
+  .recap-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #E5E5E0;font-size:13px}
+  .recap-row:last-child{border:none}
+  .recap-row span:first-child{color:#6B6B65}
+  .recap-row span:last-child{font-weight:500;color:#1A1A18}
+  .actions{display:flex;gap:12px;margin-top:24px}
+  .btn-accept{background:#27704a;color:#fff;padding:12px 24px;text-decoration:none;font-size:13px;letter-spacing:0.05em;display:inline-block}
+  .btn-refuse{background:#c0392b;color:#fff;padding:12px 24px;text-decoration:none;font-size:13px;letter-spacing:0.05em;display:inline-block}
+  .footer{padding:24px 40px;border-top:1px solid #E5E5E0;font-size:12px;color:#6B6B65}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header"><div class="logo">Blink Sélect — Admin</div></div>
+  <div class="body">
+    <div class="tag">Nouvelle demande</div>
+    <h1>Réservation en attente</h1>
+    <div class="recap">
+      <div class="recap-row"><span>Client</span><span>${prenom} ${nom}</span></div>
+      <div class="recap-row"><span>Email</span><span>${clientEmail}</span></div>
+      <div class="recap-row"><span>Marque</span><span>${marque}</span></div>
+      <div class="recap-row"><span>Date</span><span>${date}</span></div>
+      <div class="recap-row"><span>Créneau</span><span>${creneau}</span></div>
+      <div class="recap-row"><span>Référence</span><span>${ref}</span></div>
+    </div>
+    <p style="font-size:13px;color:#6B6B65;margin-bottom:20px">Connectez-vous au panel admin pour accepter ou refuser cette réservation.</p>
+    <a href="https://blinkselect.vercel.app" class="btn-accept">→ Ouvrir le panel admin</a>
+  </div>
+  <div class="footer">Blink Sélect · notification automatique</div>
+</div>
+</body></html>`;
   } else {
-    return res.status(400).json({ error: 'Type inconnu' });
-  }
 
   const payload = JSON.stringify({
     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
