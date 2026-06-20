@@ -630,6 +630,7 @@ input:focus,textarea:focus{box-shadow:0 0 0 3px rgba(184,168,122,0.15)}
         <div class="sidebar-item" onclick="showAdminPanel('inscrits',this)">Inscrits</div>
         <div class="sidebar-item" onclick="showAdminPanel('reservations',this)">Réservations</div>
         <div class="sidebar-item" onclick="showAdminPanel('contenu',this)">Contenu du site</div>
+        <div class="sidebar-item" onclick="showAdminPanel('mailing',this)">📧 Mailing</div>
       </div>
       <div style="padding:1.5rem"><button class="nav-btn outline" style="width:100%" onclick="logout()">Déconnexion</button></div>
     </aside>
@@ -663,7 +664,7 @@ input:focus,textarea:focus{box-shadow:0 0 0 3px rgba(184,168,122,0.15)}
       <!-- VENTES -->
       <div class="admin-panel" id="panel-ventes">
         <h2>Ventes privées</h2>
-        <button class="add-btn" onclick="addVente()">+ Ajouter une vente</button>
+        <button class="add-btn" onclick="openAddVenteModal()">+ Ajouter une vente</button>
         <div id="ventes-list"></div>
       </div>
       <!-- CRÉNEAUX -->
@@ -734,7 +735,59 @@ input:focus,textarea:focus{box-shadow:0 0 0 3px rgba(184,168,122,0.15)}
             </div>
           </div>
         </div>
+      <!-- PANEL MAILING -->
+      <div class="admin-panel" id="panel-mailing">
+        <h2>Mailing clients</h2>
+        <div class="edit-card">
+          <h4>Rédiger un email</h4>
+          <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1.2rem">Envoi aux membres qui <strong>n'ont pas</strong> coché "Je ne souhaite pas recevoir les invitations".</p>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label>Objet de l'email</label>
+            <input type="text" id="mail-subject" placeholder="Ex: Nouvelle vente privée Silhouette ce samedi !">
+          </div>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label>Message</label>
+            <textarea id="mail-body" rows="8" style="resize:vertical" placeholder="Rédigez votre message ici..."></textarea>
+          </div>
+          <div id="mail-preview-wrap" style="display:none;margin-bottom:1rem">
+            <h4 style="font-size:0.8rem;margin-bottom:0.6rem">Aperçu</h4>
+            <div id="mail-preview" style="border:1px solid var(--border);padding:1.2rem;font-size:0.83rem;line-height:1.7;background:var(--ivory);white-space:pre-wrap"></div>
+          </div>
+          <div id="mail-send-info" style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem"></div>
+          <div class="msg" id="mail-msg" style="margin-bottom:1rem"></div>
+          <div style="display:flex;gap:0.8rem;flex-wrap:wrap">
+            <button class="tbl-btn" onclick="previewMailing()">👁 Aperçu</button>
+            <button class="btn-primary" style="font-size:0.78rem;padding:0.7rem 1.5rem" onclick="sendMailing()">Envoyer à tous les abonnés →</button>
+          </div>
+        </div>
+      </div>
+
     </main>
+  </div>
+</div>
+
+<!-- MODAL NOUVELLE VENTE -->
+<div class="overlay" id="overlay-vente">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-close" onclick="closeVenteModal()">✕</button>
+    <h3 id="vente-modal-title">Nouvelle vente privée</h3>
+    <p class="sub">Renseignez les informations de l'événement</p>
+    <div class="form-group" style="margin-bottom:1rem">
+      <label>Marque <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="vm-marque" placeholder="Ex: Silhouette, Lindberg..." autocomplete="off">
+    </div>
+    <div class="form-group" style="margin-bottom:1rem">
+      <label>Remise <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="vm-remise" placeholder="Ex: −40%" autocomplete="off">
+    </div>
+    <div class="form-group" style="margin-bottom:1.5rem">
+      <label>Date de l'événement <span style="color:var(--danger)">*</span></label>
+      <input type="date" id="vm-date" style="cursor:pointer" onchange="updateVmDateDisplay()">
+      <div id="vm-date-display" style="font-size:0.78rem;color:var(--muted);margin-top:0.4rem"></div>
+    </div>
+    <div class="msg" id="vm-msg" style="margin-bottom:1rem"></div>
+    <input type="hidden" id="vm-edit-id">
+    <button class="btn-primary" style="width:100%;padding:1rem" onclick="saveVenteModal()">Enregistrer la vente</button>
   </div>
 </div>
 
@@ -867,11 +920,12 @@ async function loadFromFirestore() {
 }
 
 // ── AUTH STATE : session persistante ──
+let isRegistering=false;
 onAuthStateChanged(auth, async (firebaseUser) => {
   await loadFromFirestore();
 
   if (firebaseUser) {
-    // Vérifier si c'est l'admin
+    if(isRegistering) return; // Ne pas interrompre le flow d'inscription
     if (firebaseUser.email === 'optical.blink@gmail.com') {
       currentUser = { id: firebaseUser.uid, prenom: 'Admin', role: 'admin', email: firebaseUser.email };
       closeGate();
@@ -879,7 +933,6 @@ onAuthStateChanged(auth, async (firebaseUser) => {
       enterAdmin();
       return;
     }
-    // Charger le profil Firestore
     const F = window._firebase;
     try {
       const snap = await F.getDoc(F.doc(db, 'users', firebaseUser.uid));
@@ -893,7 +946,6 @@ onAuthStateChanged(auth, async (firebaseUser) => {
     } catch(e) { console.warn('Profile load error:', e); }
   }
 
-  // Non connecté
   currentUser = null;
   renderPublic();
   document.getElementById('app-loader')?.remove();
@@ -969,7 +1021,7 @@ function updateNav(role){
   } else if(role==='client'){
     nav.style.display='';
     nav.style.display='';
-    nl.innerHTML=`<a onclick="goHome()">Accueil</a><div class="account-menu-wrap"><button class="nav-btn outline" onclick="toggleAccountMenu()">Mon compte ▾</button><div class="account-dropdown" id="account-dropdown"><div class="account-item" onclick="enterClient()">Mes réservations</div><div class="account-item" onclick="openMonCompte()">Modifier mes infos</div><div class="account-item danger" onclick="logout()">Déconnexion</div></div></div>`;
+    nl.innerHTML=`<a onclick="enterClient()">Mes réservations</a><div class="account-menu-wrap"><button class="nav-btn outline" onclick="toggleAccountMenu()">Mon compte ▾</button><div class="account-dropdown" id="account-dropdown"><div class="account-item" onclick="goHome()">Accueil</div><div class="account-item" onclick="openMonCompte()">Modifier mes infos</div><div class="account-item danger" onclick="logout()">Déconnexion</div></div></div>`;
   } else {
     nav.style.display='';
     nl.innerHTML=`<a onclick="goHome()">Voir le site</a><button class="nav-btn" onclick="enterAdmin()">Admin</button><button class="nav-btn outline" onclick="logout()">Déconnexion</button>`;
@@ -1202,6 +1254,7 @@ async function submitVerifyCode(){
   if(Date.now()>verifyExpiry)return showMsg('verify-msg','error','Code expiré. Demandez un nouveau code.');
   if(input!==verifyCode)return showMsg('verify-msg','error','Code incorrect. Vérifiez votre email.');
   try {
+    isRegistering=true;
     const cred=await window._firebaseAuth.createUserWithEmailAndPassword(window._auth,pendingUser.email,pendingUser.pwd);
     const uid=cred.user.uid;
     const profile={prenom:pendingUser.prenom,nom:pendingUser.nom,email:pendingUser.email,tel:pendingUser.tel,newsletter:pendingUser.newsletter,role:'client',createdAt:Date.now()};
@@ -1210,9 +1263,11 @@ async function submitVerifyCode(){
     DB.users.push(currentUser);
     fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'inscription',to:pendingUser.email,prenom:pendingUser.prenom})}).catch(()=>{});
     pendingUser=null;verifyCode=null;verifyExpiry=null;
+    isRegistering=false;
     updateNav('client');
     showPage('rdv');renderRdvPage(true);
   } catch(e) {
+    isRegistering=false;
     if(e.code==='auth/email-already-in-use')showMsg('verify-msg','error','Cette adresse email est déjà utilisée.');
     else showMsg('verify-msg','error','Erreur lors de la création du compte. Réessayez.');
   }
@@ -1660,32 +1715,127 @@ function adminConfirmResa(id){
     }
   }
   renderDashboard();renderReservations();toast('Confirmée — mail envoyé ✓');
+  if(name==='mailing')renderMailing();
 }
 
-function renderVentes(){
+function renderMailing(){
+  const abonnes=DB.users.filter(u=>u.role==='client'&&u.newsletter!==false);
+  document.getElementById('mail-send-info').textContent=`${abonnes.length} membre${abonnes.length>1?'s':''} abonné${abonnes.length>1?'s':''} recevront cet email.`;
+}
+
+function previewMailing(){
+  const subject=document.getElementById('mail-subject').value.trim();
+  const body=document.getElementById('mail-body').value.trim();
+  if(!subject||!body)return showMsg('mail-msg','error','Veuillez remplir l\'objet et le message.');
+  document.getElementById('mail-preview').textContent=body;
+  document.getElementById('mail-preview-wrap').style.display='block';
+  showMsg('mail-msg','','');
+}
+
+async function sendMailing(){
+  const subject=document.getElementById('mail-subject').value.trim();
+  const body=document.getElementById('mail-body').value.trim();
+  if(!subject||!body)return showMsg('mail-msg','error','Veuillez remplir l\'objet et le message.');
+  const abonnes=DB.users.filter(u=>u.role==='client'&&u.newsletter!==false&&u.email);
+  if(!abonnes.length)return showMsg('mail-msg','error','Aucun abonné trouvé.');
+  showMsg('mail-msg','success','Envoi en cours...');
+  let ok=0,err=0;
+  for(const u of abonnes){
+    try{
+      const res=await fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'mailing',to:u.email,prenom:u.prenom,subject,body})});
+      const d=await res.json();
+      if(d.success)ok++;else err++;
+    }catch(e){err++;}
+  }
+  showMsg('mail-msg','success',`✓ ${ok} email${ok>1?'s':''} envoyé${ok>1?'s':''}${err>0?' · '+err+' échec':''}.`);
+  if(ok===abonnes.length){document.getElementById('mail-subject').value='';document.getElementById('mail-body').value='';document.getElementById('mail-preview-wrap').style.display='none';}
+}
   const sel=document.getElementById('reg-marque');
   document.getElementById('ventes-list').innerHTML=DB.ventes.map(v=>`
-    <div class="edit-card" id="vente-card-${v.id}">
-      <h4>${v.marque} — ${v.date} <button class="tbl-btn danger" onclick="deleteVente(${v.id})">Supprimer</button></h4>
-      <div class="form-grid" style="gap:1rem">
-        <div class="form-group"><label>Marque</label><input type="text" id="v-marque-${v.id}" value="${v.marque}"></div>
-        <div class="form-group"><label>Remise</label><input type="text" id="v-remise-${v.id}" value="${v.remise}"></div>
-        <div class="form-group full"><label>Date</label><input type="text" id="v-date-${v.id}" value="${v.date}"></div>
+    <div class="edit-card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <div style="font-size:1rem;font-weight:500;color:var(--charcoal)">${v.marque}</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:0.3rem">${v.date} · <span style="color:var(--gold)">${v.remise}</span></div>
       </div>
-      <button class="btn-primary" onclick="saveVente(${v.id})">Enregistrer</button>
-    </div>`).join('');
+      <div style="display:flex;gap:0.6rem">
+        <button class="tbl-btn" onclick="openAddVenteModal('${v.id}')">✏️ Modifier</button>
+        <button class="tbl-btn danger" onclick="deleteVente('${v.id}')">Supprimer</button>
+      </div>
+    </div>`).join('')||'<p style="color:var(--muted);font-size:0.85rem;padding:1rem">Aucune vente programmée.</p>';
+  const sel=document.getElementById('reg-marque');
+  if(sel)sel.innerHTML=DB.ventes.map(v=>`<option value="${v.id}">${v.marque} — ${v.date}</option>`).join('');
+}
+
+function openAddVenteModal(editId){
+  document.getElementById('vm-msg').style.display='none';
+  if(editId){
+    const v=DB.ventes.find(x=>String(x.id)===String(editId));
+    document.getElementById('vente-modal-title').textContent='Modifier la vente';
+    document.getElementById('vm-marque').value=v.marque||'';
+    document.getElementById('vm-remise').value=v.remise||'';
+    document.getElementById('vm-date').value=venteStringToInput(v.date);
+    document.getElementById('vm-edit-id').value=editId;
+    updateVmDateDisplay();
+  } else {
+    document.getElementById('vente-modal-title').textContent='Nouvelle vente privée';
+    document.getElementById('vm-marque').value='';
+    document.getElementById('vm-remise').value='';
+    document.getElementById('vm-date').value='';
+    document.getElementById('vm-date-display').textContent='';
+    document.getElementById('vm-edit-id').value='';
+  }
+  document.getElementById('overlay-vente').classList.add('active');
+  setTimeout(()=>document.getElementById('vm-marque').focus(),100);
+}
+
+function closeVenteModal(){document.getElementById('overlay-vente').classList.remove('active');}
+
+function venteStringToInput(dateStr){
+  const mois={janvier:'01',février:'02',mars:'03',avril:'04',mai:'05',juin:'06',juillet:'07',août:'08',septembre:'09',octobre:'10',novembre:'11',décembre:'12'};
+  const parts=dateStr.toLowerCase().split(' ');
+  if(parts.length>=4){const jour=parts[1]?.padStart(2,'0');const m=mois[parts[2]];const y=parts[3];if(jour&&m&&y)return`${y}-${m}-${jour}`;}
+  return '';
+}
+
+function inputToVenteString(dateVal){
+  if(!dateVal)return '';
+  const d=new Date(dateVal+'T12:00:00');
+  const s=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+
+function updateVmDateDisplay(){
+  const val=document.getElementById('vm-date').value;
+  document.getElementById('vm-date-display').textContent=val?inputToVenteString(val):'';
+}
+
+function saveVenteModal(){
+  const marque=document.getElementById('vm-marque').value.trim();
+  const remise=document.getElementById('vm-remise').value.trim();
+  const dateVal=document.getElementById('vm-date').value;
+  const editId=document.getElementById('vm-edit-id').value;
+  if(!marque||!remise||!dateVal)return showMsg('vm-msg','error','Veuillez remplir tous les champs.');
+  const dateStr=inputToVenteString(dateVal);
+  if(editId){
+    const v=DB.ventes.find(x=>String(x.id)===String(editId));
+    if(v){v.marque=marque;v.remise=remise;v.date=dateStr;if(window._saveVente)window._saveVente(v);}
+  } else {
+    const id='v'+Date.now();
+    const newV={id,marque,remise,date:dateStr};
+    DB.ventes.push(newV);
+    if(window._saveVente)window._saveVente(newV);
+  }
+  closeVenteModal();renderVentes();renderPublic();
+  toast(editId?'Vente mise à jour ✓':'Vente ajoutée ✓');
 }
 
 function saveVente(id){
-  const v=DB.ventes.find(x=>x.id===id);
-  v.marque=document.getElementById('v-marque-'+id).value;
-  v.remise=document.getElementById('v-remise-'+id).value;
-  v.date=document.getElementById('v-date-'+id).value;
-  if(window._saveVente)window._saveVente(v);
+  const v=DB.ventes.find(x=>String(x.id)===String(id));
+  if(v){if(window._saveVente)window._saveVente(v);}
   renderVentes();renderPublic();toast('Vente mise à jour ✓');
 }
-function deleteVente(id){if(!confirm('Supprimer cette vente ?'))return;DB.ventes=DB.ventes.filter(v=>v.id!==id);if(window._deleteVente)window._deleteVente(id);renderVentes();renderPublic();}
-function addVente(){const id='v'+Date.now();DB.ventes.push({id,marque:'Nouvelle marque',date:'Samedi —',remise:'−30%'});renderVentes();}
+function deleteVente(id){if(!confirm('Supprimer cette vente ?'))return;DB.ventes=DB.ventes.filter(v=>String(v.id)!==String(id));if(window._deleteVente)window._deleteVente(id);renderVentes();renderPublic();}
+function addVente(){openAddVenteModal();}
 
 function renderCreneauxAdmin(){
   document.getElementById('creneaux-admin').innerHTML=DB.creneaux.map((c,i)=>`
