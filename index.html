@@ -323,6 +323,7 @@ footer p{font-size:0.73rem;color:var(--muted)}
     </div>
     <div class="check-group">
       <label class="check-row required-check"><input type="checkbox" id="r2-cgv"><span>J'ai lu et j'accepte les <a onclick="document.getElementById('overlay-cgv').classList.add('active')">Conditions Générales de Vente</a>. <span style="color:var(--danger)">*</span></span></label>
+      <label class="check-row required-check"><input type="checkbox" id="r2-rgpd"><span>J'accepte que mes données personnelles soient traitées par Blink Sélect conformément à la <a onclick="document.getElementById('overlay-cgv').classList.add('active')">politique de confidentialité</a> (RGPD). <span style="color:var(--danger)">*</span></span></label>
       <label class="check-row"><input type="checkbox" id="r2-mail"><span>Je souhaite recevoir les invitations des prochaines ventes privées par email.</span></label>
     </div>
     <div class="msg" id="r2-msg"></div>
@@ -745,7 +746,14 @@ async function loadFromFirestore() {
     const resasSnap = await F.getDocs(F.collection(db, 'reservations'));
     if (!resasSnap.empty) DB.reservations = resasSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
+    // USERS (pour panel admin)
+    const usersSnap = await F.getDocs(F.collection(db, 'users'));
+    if (!usersSnap.empty) DB.users = usersSnap.docs.map(d => ({ id: d.id, ...d.data(), role: 'client' }));
+
   } catch(e) { console.warn('Firebase load error:', e); }
+
+  // Rafraîchir l'affichage après chargement complet
+  renderPublic();
 }
 
 // ── AUTH STATE : session persistante ──
@@ -1057,6 +1065,7 @@ function submitRegisterPage(){
   if(pwd.length<6)return showMsg('r2-msg','error','Le mot de passe doit contenir au moins 6 caractères.');
   if(pwd!==pwd2)return showMsg('r2-msg','error','Les mots de passe ne correspondent pas.');
   if(!document.getElementById('r2-cgv').checked)return showMsg('r2-msg','error','Vous devez accepter les CGV.');
+  if(!document.getElementById('r2-rgpd').checked)return showMsg('r2-msg','error','Vous devez accepter la politique de confidentialité (RGPD).');
   if(tel&&!validateTel(tel))return showMsg('r2-msg','error','Numéro de téléphone invalide (format français requis, ex: 06 12 34 56 78).');
   if(DB.users.find(u=>u.email===email))return showMsg('r2-msg','error','Cette adresse email est déjà utilisée.');
   const telFormatted=tel?formatTel(tel):'';
@@ -1065,7 +1074,7 @@ function submitRegisterPage(){
   const now=Date.now();
   if(now-lastVerifySent<30000)return showMsg('r2-msg','error','Veuillez patienter '+(Math.ceil((30000-(now-lastVerifySent))/1000))+' secondes avant de renvoyer un code.');
   lastVerifySent=now;
-  pendingUser={prenom,nom,email,pwd,tel:telFormatted,newsletter:document.getElementById('r2-mail').checked};
+  pendingUser={prenom,nom,email,pwd,tel:telFormatted,newsletter:document.getElementById('r2-mail').checked,rgpdConsent:true,rgpdDate:new Date().toISOString()};
   verifyCode=String(Math.floor(100000+Math.random()*900000));
   verifyExpiry=Date.now()+10*60*1000;
   fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'verification',to:email,prenom,code:verifyCode})}).catch(()=>{});
@@ -1483,8 +1492,8 @@ function renderDashboard(){
     const tauxOccupation=DB.creneaux.length>0?Math.round(resasConfirmed.length/DB.creneaux.length*100):0;
     const newsletter=clients.filter(u=>u.newsletter).length;
     statsExtra.innerHTML=`
-      <div class="stat-card"><div class="s-label">En attente</div><div class="s-num" style="font-size:1.5rem;color:var(--gold)">${resasPending}</div></div>
-      <div class="stat-card"><div class="s-label">Annulées</div><div class="s-num" style="font-size:1.5rem;color:var(--danger)">${resasCancelled}</div></div>
+      <div class="stat-card"><div class="s-label">En attente</div><div class="s-num" style="font-size:1.5rem;color:var(--gold)">${resasPending.length}</div></div>
+      <div class="stat-card"><div class="s-label">Annulées</div><div class="s-num" style="font-size:1.5rem;color:var(--danger)">${resasCancelled.length}</div></div>
       <div class="stat-card"><div class="s-label">Newsletter</div><div class="s-num" style="font-size:1.5rem">${newsletter}</div></div>
     `;
   }
@@ -1630,7 +1639,13 @@ function adminConfirmResaPanel(id){
     r.status='confirmed';
     markCreneauComplet(r.creneau);
     if(window._updateResa)window._updateResa(id,{status:'confirmed'});
-    fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'confirmed',to:r.email,prenom:r.prenom,marque:r.marque,date:r.date,creneau:r.creneau,ref:'BLNK-'+id.slice(-6).toUpperCase()})}).catch(()=>{});
+    if(window._saveCreneaux)window._saveCreneaux(DB.creneaux);
+    const emailTo=r.email||(DB.users.find(u=>u.id===r.userId)||{}).email||'';
+    const prenomTo=r.prenom||(DB.users.find(u=>u.id===r.userId)||{}).prenom||'';
+    if(emailTo){
+      fetch('/api/send-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'confirmed',to:emailTo,prenom:prenomTo,marque:r.marque,date:r.date,creneau:r.creneau,ref:'BLNK-'+id.slice(-6).toUpperCase()})})
+        .then(res=>res.json()).then(d=>console.log('Mail confirmed:',d)).catch(e=>console.error('Mail error:',e));
+    }
   }
   renderReservations();renderDashboard();toast('Confirmée — mail envoyé ✓');
 }
